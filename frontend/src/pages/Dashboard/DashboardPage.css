@@ -1,0 +1,93 @@
+.dashboard-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 30px;
+}
+
+.dashboard-eyebrow {
+  margin: 0 0 8px;
+  color: #dc2626;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+}
+
+.dashboard-heading h2 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 32px;
+}
+
+.dashboard-heading p:last-child {
+  margin: 12px 0 0;
+  color: #64748b;
+  line-height: 1.6;
+}
+
+.add-company-button {
+  display: flex;
+  min-height: 44px;
+  align-items: center;
+  gap: 9px;
+  padding: 0 17px;
+  border: 0;
+  border-radius: 9px;
+  background: #dc2626;
+  color: #ffffff;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.add-company-button:hover {
+  background: #b91c1c;
+}
+
+.add-company-button span {
+  font-size: 20px;
+  line-height: 1;
+}
+
+.companies-section {
+  padding: 26px;
+  border: 1px solid #e2e8f0;
+  border-radius: 15px;
+  background: #ffffff;
+}
+
+.companies-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 22px;
+}
+
+.companies-section-header h3 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 19px;
+}
+
+.companies-section-header p {
+  margin: 6px 0 0;
+  color: #64748b;
+  font-size: 13px;
+}
+
+@media (max-width: 700px) {
+  .dashboard-heading {
+    flex-direction: column;
+  }
+
+  .add-company-button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .companies-section {
+    padding: 18px;
+  }
+}

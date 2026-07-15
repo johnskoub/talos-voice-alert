@@ -1,0 +1,124 @@
+.company-card {
+  display: flex;
+  min-height: 285px;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
+}
+
+.company-card:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 16px 36px rgba(15, 23, 42, 0.1);
+  transform: translateY(-3px);
+}
+
+.company-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 22px 22px 0;
+}
+
+.company-icon {
+  display: grid;
+  width: 48px;
+  height: 48px;
+  place-items: center;
+  border-radius: 11px;
+  background: #0f172a;
+  color: #ffffff;
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.company-status {
+  padding: 6px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.company-status--active {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.company-status--inactive {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+.company-card-content {
+  flex: 1;
+  padding: 22px;
+}
+
+.company-card-content h3 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 19px;
+}
+
+.company-location {
+  min-height: 44px;
+  margin: 10px 0 24px;
+  color: #64748b;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.company-statistics {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.company-statistics div {
+  padding: 12px;
+  border-radius: 9px;
+  background: #f8fafc;
+}
+
+.company-statistics span,
+.company-statistics strong {
+  display: block;
+}
+
+.company-statistics span {
+  color: #64748b;
+  font-size: 11px;
+}
+
+.company-statistics strong {
+  margin-top: 6px;
+  color: #0f172a;
+  font-size: 20px;
+}
+
+.company-open-button {
+  display: flex;
+  min-height: 48px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 22px;
+  border: 0;
+  border-top: 1px solid #e2e8f0;
+  background: #ffffff;
+  color: #334155;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.company-open-button:hover {
+  background: #f8fafc;
+  color: #dc2626;
+}

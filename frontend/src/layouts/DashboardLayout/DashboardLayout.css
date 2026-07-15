@@ -1,0 +1,28 @@
+.dashboard-layout {
+  min-height: 100vh;
+  background: #f1f5f9;
+}
+
+.dashboard-layout-main {
+  min-height: 100vh;
+  margin-left: 270px;
+}
+
+.dashboard-layout-content {
+  min-height: calc(100vh - 88px);
+}
+
+.sidebar-overlay {
+  position: fixed;
+  z-index: 15;
+  inset: 0;
+  border: 0;
+  background: rgba(15, 23, 42, 0.48);
+  cursor: pointer;
+}
+
+@media (max-width: 900px) {
+  .dashboard-layout-main {
+    margin-left: 0;
+  }
+}

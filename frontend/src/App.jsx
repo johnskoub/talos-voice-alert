@@ -1,11 +1,26 @@
+import { Navigate, Route, Routes } from 'react-router';
+import LoginPage from './pages/Login/LoginPage';
+import DashboardPage from './pages/Dashboard/DashboardPage';
+import DashboardLayout from './layouts/DashboardLayout/DashboardLayout';
+import CompanyDetailsPage from './pages/CompanyDetails/CompanyDetailsPage';
 import './styles/global.css';
 
 function App() {
   return (
-    <div className="app">
-      <h1>TALOS Evacuation Platform</h1>
-      <p>Web εφαρμογή διαχείρισης φωνητικών ειδοποιήσεων κινδύνου.</p>
-    </div>
+    <Routes>
+      <Route path="/" element={<Navigate to="/sign-in" replace />} />
+
+      <Route path="/sign-in" element={<LoginPage />} />
+
+      <Route element={<DashboardLayout />}>
+
+        <Route path="/dashboard" element={<DashboardPage />} />
+        <Route path="/companies/:companyId"element={<CompanyDetailsPage />}/>
+        
+      </Route>
+
+      <Route path="*" element={<Navigate to="/sign-in" replace />} />
+    </Routes>
   );
 }
 

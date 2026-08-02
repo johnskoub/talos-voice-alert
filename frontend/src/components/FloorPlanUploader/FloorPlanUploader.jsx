@@ -16,7 +16,7 @@ function FloorPlanUploader({ onImageSelect, hasImage }) {
       return;
     }
 
-    const maximumFileSize = 5 * 1024 * 1024;
+    const maximumFileSize = 2 * 1024 * 1024;
 
     if (selectedFile.size > maximumFileSize) {
       alert('Η εικόνα δεν μπορεί να ξεπερνά τα 5 MB.');

@@ -1,0 +1,106 @@
+.floor-editor-page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.floor-editor-back {
+  margin: 0 0 20px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #64748b;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.floor-editor-back:hover {
+  color: #dc2626;
+}
+
+.floor-editor-eyebrow {
+  margin: 0 0 7px;
+  color: #dc2626;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+}
+
+.floor-editor-page-header h2 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 34px;
+}
+
+.floor-editor-page-header div > p:last-child {
+  margin: 11px 0 0;
+  color: #64748b;
+}
+
+.floor-editor-save-button {
+  min-height: 44px;
+  padding: 0 17px;
+  border: 0;
+  border-radius: 9px;
+  background: #dc2626;
+  color: #ffffff;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.floor-editor-save-button:hover {
+  background: #b91c1c;
+}
+
+.floor-editor-layout {
+  display: grid;
+  grid-template-columns: 230px minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.floor-editor-unavailable {
+  padding: 32px;
+  border-radius: 14px;
+  background: #ffffff;
+}
+
+.floor-editor-unavailable h2 {
+  margin-top: 0;
+}
+
+.floor-editor-unavailable p {
+  color: #64748b;
+}
+
+.floor-editor-unavailable button {
+  min-height: 42px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 8px;
+  background: #0f172a;
+  color: #ffffff;
+  cursor: pointer;
+}
+
+@media (max-width: 1000px) {
+  .floor-editor-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 700px) {
+  .floor-editor-page-header {
+    flex-direction: column;
+  }
+
+  .floor-editor-save-button {
+    width: 100%;
+  }
+}

@@ -1,21 +1,38 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import PageContainer from '../../components/PageContainer/PageContainer';
 import FloorPlanUploader from '../../components/FloorPlanUploader/FloorPlanUploader';
 import FloorPlanCanvas from '../../components/FloorPlanCanvas/FloorPlanCanvas';
 import companyMockData from '../../services/companyMockData';
 import floorMockData from '../../services/floorMockData';
+import {
+  loadFloorPlanFromSession,
+  readImageFileAsDataUrl,
+  saveFloorPlanToSession,
+} from '../../services/floorPlanStorage';
 import './FloorDetailsPage.css';
 
 function FloorDetailsPage() {
   const { companyId, floorId } = useParams();
   const navigate = useNavigate();
 
-  const [floorPlanImage, setFloorPlanImage] = useState(null);
-  const [floorPlanImageName, setFloorPlanImageName] = useState('');
-
   const numericCompanyId = Number(companyId);
   const numericFloorId = Number(floorId);
+
+  const storedFloorPlan = loadFloorPlanFromSession(
+  numericCompanyId,
+  numericFloorId
+);
+
+const [floorPlanImage, setFloorPlanImage] = useState(
+  storedFloorPlan?.imageDataUrl ?? null
+);
+
+const [floorPlanImageName, setFloorPlanImageName] = useState(
+  storedFloorPlan?.imageName ?? ''
+);
+
+const [uploadError, setUploadError] = useState('');
 
   const company = companyMockData.find(
     (item) => item.id === numericCompanyId
@@ -27,23 +44,30 @@ function FloorDetailsPage() {
       item.companyId === numericCompanyId
   );
 
-  useEffect(() => {
-    return () => {
-      if (floorPlanImage) {
-        URL.revokeObjectURL(floorPlanImage);
-      }
-    };
-  }, [floorPlanImage]);
+  const handleImageSelect = async (selectedFile) => {
+  try {
+    setUploadError('');
 
-  const handleImageSelect = (selectedFile) => {
-    if (floorPlanImage) {
-      URL.revokeObjectURL(floorPlanImage);
-    }
+    const imageDataUrl = await readImageFileAsDataUrl(selectedFile);
 
-    const temporaryImageUrl = URL.createObjectURL(selectedFile);
+    saveFloorPlanToSession({
+      companyId: numericCompanyId,
+      floorId: numericFloorId,
+      imageDataUrl,
+      imageName: selectedFile.name,
+    });
 
-    setFloorPlanImage(temporaryImageUrl);
+    setFloorPlanImage(imageDataUrl);
     setFloorPlanImageName(selectedFile.name);
+    } catch (error) {
+      setUploadError(error.message);
+    }
+  };
+
+  const handleOpenEditor = () => {
+  navigate(
+    `/companies/${numericCompanyId}/floors/${numericFloorId}/editor`
+    );
   };
 
   if (!company || !floor) {
@@ -94,6 +118,7 @@ function FloorDetailsPage() {
           className="open-editor-button"
           type="button"
           disabled={!floorPlanImage}
+          onClick={handleOpenEditor}
         >
           Άνοιγμα Floor Plan Editor
         </button>
@@ -128,6 +153,12 @@ function FloorDetailsPage() {
           onImageSelect={handleImageSelect}
           hasImage={Boolean(floorPlanImage)}
         />
+
+        {uploadError && (
+          <p className="floor-plan-upload-error" role="alert">
+            {uploadError}
+          </p>
+        )}
 
         <FloorPlanCanvas
           imageUrl={floorPlanImage}

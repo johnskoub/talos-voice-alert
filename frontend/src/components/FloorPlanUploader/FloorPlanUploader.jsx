@@ -19,7 +19,7 @@ function FloorPlanUploader({ onImageSelect, hasImage }) {
     const maximumFileSize = 2 * 1024 * 1024;
 
     if (selectedFile.size > maximumFileSize) {
-      alert('Η εικόνα δεν μπορεί να ξεπερνά τα 5 MB.');
+      alert('Η εικόνα δεν μπορεί να ξεπερνά τα 2 MB.');
       event.target.value = '';
       return;
     }

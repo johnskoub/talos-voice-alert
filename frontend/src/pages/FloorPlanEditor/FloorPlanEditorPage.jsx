@@ -6,6 +6,7 @@ import FloorEditorCanvas from '../../components/FloorEditorCanvas/FloorEditorCan
 import companyMockData from '../../services/companyMockData';
 import floorMockData from '../../services/floorMockData';
 import { loadFloorPlanFromSession } from '../../services/floorPlanStorage';
+import { loadFloorElements, saveFloorElements, } from '../../services/floorElementStorage';
 import './FloorPlanEditorPage.css';
 
 function FloorPlanEditorPage() {
@@ -13,6 +14,19 @@ function FloorPlanEditorPage() {
   const navigate = useNavigate();
 
   const [activeTool, setActiveTool] = useState('SELECT');
+  const [selectedElementId, setSelectedElementId] = useState(null);
+  const [elements, setElements] = useState(() =>
+    loadFloorElements(Number(companyId), Number(floorId))
+  );
+  const [saveMessage, setSaveMessage] = useState('');
+
+  const handleToolChange = (toolId) => {
+    setActiveTool(toolId);
+
+    if (toolId !== 'SELECT') {
+        setSelectedElementId(null);
+    }
+  };
 
   const numericCompanyId = Number(companyId);
   const numericFloorId = Number(floorId);
@@ -32,6 +46,22 @@ function FloorPlanEditorPage() {
     numericFloorId
   );
 
+  const handleSaveChanges = () => {
+  saveFloorElements(
+    numericCompanyId,
+    numericFloorId,
+    elements
+  );
+
+  setSaveMessage(
+    `Αποθηκεύτηκαν ${elements.length} Floor Elements.`
+  );
+
+  window.setTimeout(() => {
+    setSaveMessage('');
+  }, 2500);
+};
+    
   if (!company || !floor || !storedFloorPlan) {
     return (
       <PageContainer>
@@ -85,21 +115,37 @@ function FloorPlanEditorPage() {
           </p>
         </div>
 
-        <button className="floor-editor-save-button" type="button">
-          Αποθήκευση αλλαγών
-        </button>
+        <div className="floor-editor-save-area">
+            {saveMessage && (
+                <p className="floor-editor-save-message" role="status">
+                {saveMessage}
+                </p>
+            )}
+
+            <button
+                className="floor-editor-save-button"
+                type="button"
+                onClick={handleSaveChanges}
+            >
+                Αποθήκευση αλλαγών
+            </button>
+        </div>
       </section>
 
       <div className="floor-editor-layout">
         <FloorEditorToolbar
-          activeTool={activeTool}
-          onToolChange={setActiveTool}
+            activeTool={activeTool}
+            onToolChange={handleToolChange}
         />
 
         <FloorEditorCanvas
-          imageUrl={storedFloorPlan.imageDataUrl}
-          imageName={storedFloorPlan.imageName}
-          activeTool={activeTool}
+            imageUrl={storedFloorPlan.imageDataUrl}
+            imageName={storedFloorPlan.imageName}
+            activeTool={activeTool}
+            elements={elements}
+            onElementsChange={setElements}
+            selectedElementId={selectedElementId}
+            onElementSelect={setSelectedElementId}
         />
       </div>
     </PageContainer>

@@ -1,0 +1,121 @@
+.floor-plan-canvas {
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+  border-radius: 15px;
+  background: #ffffff;
+}
+
+.floor-plan-canvas--empty {
+  display: grid;
+  min-height: 500px;
+  place-items: center;
+  padding: 32px;
+  border-style: dashed;
+}
+
+.floor-plan-empty-content {
+  max-width: 440px;
+  text-align: center;
+}
+
+.floor-plan-empty-icon {
+  display: grid;
+  width: 68px;
+  height: 68px;
+  margin: 0 auto 20px;
+  place-items: center;
+  border-radius: 16px;
+  background: #f1f5f9;
+  color: #64748b;
+  font-size: 32px;
+}
+
+.floor-plan-empty-content h3 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 22px;
+}
+
+.floor-plan-empty-content p {
+  margin: 12px 0 0;
+  color: #64748b;
+  line-height: 1.7;
+}
+
+.floor-plan-canvas-header {
+  display: flex;
+  min-height: 72px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 15px 22px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.floor-plan-canvas-header p {
+  margin: 0 0 5px;
+  color: #dc2626;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+}
+
+.floor-plan-canvas-header strong {
+  color: #0f172a;
+  font-size: 14px;
+}
+
+.floor-plan-canvas-header > span {
+  padding: 6px 9px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.floor-plan-image-wrapper {
+  position: relative;
+  display: grid;
+  min-height: 500px;
+  max-height: 720px;
+  place-items: center;
+  overflow: auto;
+  padding: 24px;
+  background:
+    linear-gradient(#f8fafc 1px, transparent 1px),
+    linear-gradient(90deg, #f8fafc 1px, transparent 1px),
+    #eef2f7;
+  background-size: 24px 24px;
+}
+
+.floor-plan-image {
+  position: relative;
+  z-index: 1;
+  display: block;
+  max-width: 100%;
+  max-height: 660px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  object-fit: contain;
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.14);
+}
+
+.floor-plan-grid-overlay {
+  position: absolute;
+  z-index: 2;
+  inset: 24px;
+  pointer-events: none;
+}
+
+@media (max-width: 700px) {
+  .floor-plan-canvas-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .floor-plan-image-wrapper {
+    min-height: 380px;
+    padding: 14px;
+  }
+}

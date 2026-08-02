@@ -1,0 +1,34 @@
+.floor-details-back {
+  margin: 0 0 22px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #64748b;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.floor-details-back:hover {
+  color: #dc2626;
+}
+
+.floor-details-eyebrow {
+  margin: 0 0 8px;
+  color: #dc2626;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+}
+
+.floor-details-title {
+  margin: 0;
+  color: #0f172a;
+  font-size: 34px;
+}
+
+.floor-details-description {
+  margin: 14px 0 0;
+  color: #64748b;
+}

@@ -1,0 +1,121 @@
+.floor-card {
+  display: flex;
+  min-height: 245px;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
+}
+
+.floor-card:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 16px 34px rgba(15, 23, 42, 0.1);
+  transform: translateY(-3px);
+}
+
+.floor-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 22px 22px 0;
+}
+
+.floor-number {
+  display: grid;
+  width: 48px;
+  height: 48px;
+  place-items: center;
+  border-radius: 11px;
+  background: #0f172a;
+  color: #ffffff;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.floor-plan-status {
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.floor-plan-status--ready {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.floor-plan-status--draft {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.floor-plan-status--not_started {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+.floor-card-content {
+  flex: 1;
+  padding: 22px;
+}
+
+.floor-card-content h3 {
+  margin: 0 0 22px;
+  color: #0f172a;
+  font-size: 20px;
+}
+
+.floor-statistics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.floor-statistics div {
+  padding: 12px;
+  border-radius: 9px;
+  background: #f8fafc;
+}
+
+.floor-statistics span,
+.floor-statistics strong {
+  display: block;
+}
+
+.floor-statistics span {
+  color: #64748b;
+  font-size: 10px;
+}
+
+.floor-statistics strong {
+  margin-top: 6px;
+  color: #0f172a;
+  font-size: 19px;
+}
+
+.floor-open-button {
+  display: flex;
+  min-height: 48px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 22px;
+  border: 0;
+  border-top: 1px solid #e2e8f0;
+  background: #ffffff;
+  color: #334155;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.floor-open-button:hover {
+  background: #f8fafc;
+  color: #dc2626;
+}

@@ -1,3 +1,27 @@
+.company-details-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 26px;
+}
+
+.company-back-button {
+  margin: 0 0 22px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #64748b;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.company-back-button:hover {
+  color: #dc2626;
+}
+
 .company-details-eyebrow {
   margin: 0 0 8px;
   color: #dc2626;
@@ -6,13 +30,135 @@
   letter-spacing: 0.16em;
 }
 
-.company-details-title {
+.company-details-header h2 {
   margin: 0;
   color: #0f172a;
-  font-size: 32px;
+  font-size: 34px;
 }
 
-.company-details-description {
-  margin: 14px 0 0;
+.company-details-address {
+  margin: 12px 0 0;
   color: #64748b;
+}
+
+.add-floor-button {
+  display: flex;
+  min-height: 44px;
+  align-items: center;
+  gap: 9px;
+  padding: 0 17px;
+  border: 0;
+  border-radius: 9px;
+  background: #dc2626;
+  color: #ffffff;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.add-floor-button:hover {
+  background: #b91c1c;
+}
+
+.add-floor-button span {
+  font-size: 20px;
+}
+
+.company-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.company-summary div {
+  padding: 20px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #ffffff;
+}
+
+.company-summary span,
+.company-summary strong {
+  display: block;
+}
+
+.company-summary span {
+  color: #64748b;
+  font-size: 12px;
+}
+
+.company-summary strong {
+  margin-top: 8px;
+  color: #0f172a;
+  font-size: 22px;
+}
+
+.floors-section {
+  padding: 26px;
+  border: 1px solid #e2e8f0;
+  border-radius: 15px;
+  background: #ffffff;
+}
+
+.floors-section-header {
+  margin-bottom: 22px;
+}
+
+.floors-section-header h3 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 20px;
+}
+
+.floors-section-header p {
+  margin: 8px 0 0;
+  color: #64748b;
+  line-height: 1.6;
+}
+
+.company-not-found {
+  padding: 32px;
+  border-radius: 14px;
+  background: #ffffff;
+}
+
+.company-not-found h2 {
+  margin-top: 0;
+}
+
+.company-not-found button {
+  min-height: 42px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 8px;
+  background: #0f172a;
+  color: #ffffff;
+  cursor: pointer;
+}
+
+@media (max-width: 1000px) {
+  .company-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 700px) {
+  .company-details-header {
+    flex-direction: column;
+  }
+
+  .add-floor-button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .company-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .floors-section {
+    padding: 18px;
+  }
 }

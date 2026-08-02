@@ -3,6 +3,7 @@ import LoginPage from './pages/Login/LoginPage';
 import DashboardPage from './pages/Dashboard/DashboardPage';
 import DashboardLayout from './layouts/DashboardLayout/DashboardLayout';
 import CompanyDetailsPage from './pages/CompanyDetails/CompanyDetailsPage';
+import FloorDetailsPage from './pages/FloorDetails/FloorDetailsPage';
 import './styles/global.css';
 
 function App() {
@@ -16,6 +17,7 @@ function App() {
 
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/companies/:companyId"element={<CompanyDetailsPage />}/>
+        <Route path="/companies/:companyId/floors/:floorId" element={<FloorDetailsPage />}/>
         
       </Route>
 

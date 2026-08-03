@@ -7,6 +7,7 @@ import companyMockData from '../../services/companyMockData';
 import floorMockData from '../../services/floorMockData';
 import { loadFloorPlanFromSession } from '../../services/floorPlanStorage';
 import { loadFloorElements, saveFloorElements, } from '../../services/floorElementStorage';
+import FloorElementProperties from '../../components/FloorElementProperties/FloorElementProperties';
 import './FloorPlanEditorPage.css';
 
 function FloorPlanEditorPage() {
@@ -28,6 +29,22 @@ function FloorPlanEditorPage() {
     }
   };
 
+  const handleElementPropertiesChange = (
+  elementId,
+  changedProperties
+  ) => {
+    setElements((currentElements) =>
+      currentElements.map((element) =>
+        element.id === elementId
+          ? {
+              ...element,
+              ...changedProperties,
+            }
+          : element
+      )
+    );
+  };
+
   const numericCompanyId = Number(companyId);
   const numericFloorId = Number(floorId);
 
@@ -44,6 +61,10 @@ function FloorPlanEditorPage() {
   const storedFloorPlan = loadFloorPlanFromSession(
     numericCompanyId,
     numericFloorId
+  );
+
+  const selectedElement = elements.find(
+  (element) => element.id === selectedElementId
   );
 
   const handleSaveChanges = () => {
@@ -146,6 +167,10 @@ function FloorPlanEditorPage() {
             onElementsChange={setElements}
             selectedElementId={selectedElementId}
             onElementSelect={setSelectedElementId}
+        />
+        <FloorElementProperties
+          element={selectedElement}
+          onElementChange={handleElementPropertiesChange}
         />
       </div>
     </PageContainer>

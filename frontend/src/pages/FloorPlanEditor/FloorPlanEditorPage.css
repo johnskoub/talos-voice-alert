@@ -60,7 +60,7 @@
 
 .floor-editor-layout {
   display: grid;
-  grid-template-columns: 230px minmax(0, 1fr);
+  grid-template-columns: 220px minmax(0, 1fr) 290px;
   gap: 20px;
   align-items: start;
 }
@@ -106,9 +106,24 @@
   font-weight: 700;
 }
 
+@media (max-width: 1350px) {
+  .floor-editor-layout {
+    grid-template-columns: 210px minmax(0, 1fr);
+  }
+
+  .floor-element-properties {
+    position: static;
+    grid-column: 1 / -1;
+  }
+}
+
 @media (max-width: 1000px) {
   .floor-editor-layout {
     grid-template-columns: 1fr;
+  }
+
+  .floor-element-properties {
+    grid-column: auto;
   }
 }
 

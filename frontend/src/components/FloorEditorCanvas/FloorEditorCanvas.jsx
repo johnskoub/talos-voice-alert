@@ -104,11 +104,33 @@ function FloorEditorCanvas({
       return;
     }
 
+    const defaultProperties = {
+      OCCUPANT: {
+        name: '',
+        area: '',
+        status: 'ACTIVE',
+      },
+
+      EXIT: {
+        name: '',
+        side: 'EAST',
+        status: 'AVAILABLE',
+      },
+
+      FIRE_POINT: {
+        area: '',
+        side: 'WEST',
+        severity: 'MEDIUM',
+        smoke: false,
+      },
+    };
+
     const newElement = {
       id: createElementId(),
       type: activeTool,
       x: position.x,
       y: position.y,
+      ...defaultProperties[activeTool],
     };
 
     onElementsChange([...elements, newElement]);
@@ -247,6 +269,20 @@ function FloorEditorCanvas({
               const isSelected = selectedElementId === element.id;
               const isDragging = draggingElementId === element.id;
 
+              let markerLabel = information.label;
+
+              if (element.type === 'OCCUPANT' && element.name) {
+                markerLabel = element.name;
+              }
+
+              if (element.type === 'EXIT' && element.name) {
+                markerLabel = element.name;
+              }
+
+              if (element.type === 'FIRE_POINT' && element.area) {
+                markerLabel = `Φωτιά: ${element.area}`;
+              }
+
               return (
                 <button
                   key={element.id}
@@ -288,7 +324,7 @@ function FloorEditorCanvas({
                   <span aria-hidden="true">{information.symbol}</span>
 
                   <span className="floor-element-marker-label">
-                    {information.label}
+                    {markerLabel}
                   </span>
                 </button>
               );

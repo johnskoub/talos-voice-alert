@@ -235,9 +235,9 @@ function FloorEditorCanvas({
   };
 
   const handleElementClick = (event, elementId) => {
-    event.stopPropagation();
-
     if (activeTool === 'DELETE') {
+      event.stopPropagation();
+
       const updatedElements = elements.filter(
         (element) => element.id !== elementId
       );
@@ -252,6 +252,7 @@ function FloorEditorCanvas({
     }
 
     if (activeTool === 'SELECT') {
+      event.stopPropagation();
       onElementSelect(elementId);
     }
   };
@@ -395,9 +396,14 @@ function FloorEditorCanvas({
                   onClick={(event) =>
                     handleElementClick(event, zone.id)
                   }
-                  onPointerDown={(event) =>
-                    event.stopPropagation()
-                  }
+                  onPointerDown={(event) => {
+                    if (
+                      activeTool === 'SELECT' ||
+                      activeTool === 'DELETE'
+                    ) {
+                      event.stopPropagation();
+                    }
+                  }}
                   title={
                     zone.name
                       ? `Zone: ${zone.name}`

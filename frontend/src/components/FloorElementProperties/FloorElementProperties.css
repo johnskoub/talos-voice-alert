@@ -175,3 +175,37 @@
   font-size: 10px;
   line-height: 1.6;
 }
+
+.property-detected-zone {
+  margin-bottom: 18px;
+  padding: 13px;
+  border: 1px solid #bfdbfe;
+  border-radius: 9px;
+  background: #eff6ff;
+}
+
+.property-detected-zone span,
+.property-detected-zone strong,
+.property-detected-zone small {
+  display: block;
+}
+
+.property-detected-zone span {
+  color: #64748b;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.property-detected-zone strong {
+  margin-top: 5px;
+  color: #1e3a8a;
+  font-size: 13px;
+}
+
+.property-detected-zone small {
+  margin-top: 5px;
+  color: #64748b;
+  font-size: 10px;
+}

@@ -7,7 +7,7 @@ const elementTypeLabels = {
   ZONE: 'Περιοχή κάτοψης',
 };
 
-function FloorElementProperties({ element, onElementChange }) {
+function FloorElementProperties({ element, containingZone, onElementChange,}) {
   if (!element) {
     return (
       <aside className="floor-element-properties">
@@ -49,6 +49,22 @@ function FloorElementProperties({ element, onElementChange }) {
         <span>Τύπος</span>
         <strong>{elementTypeLabels[element.type]}</strong>
       </div>
+
+      {element.type !== 'ZONE' && (
+        <div className="property-detected-zone">
+          <span>Αυτόματη περιοχή</span>
+
+          <strong>
+            {containingZone?.name || 'Εκτός ορισμένης Zone'}
+          </strong>
+
+          {containingZone && (
+            <small>
+              {containingZone.category} · {containingZone.side}
+            </small>
+          )}
+        </div>
+      )}
 
       {element.type === 'ZONE' && (
         <div className="property-form">
@@ -277,7 +293,7 @@ function FloorElementProperties({ element, onElementChange }) {
             </div>
           </>
         )}
-        
+
       </div>
 
       <p className="property-save-information">

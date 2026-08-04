@@ -42,6 +42,7 @@ function FloorEditorCanvas({
   const imageRef = useRef(null);
 
   const [draggingElementId, setDraggingElementId] = useState(null);
+  const [draftZone, setDraftZone] = useState(null);
 
   const selectedElement = elements.find(
     (element) => element.id === selectedElementId
@@ -57,17 +58,36 @@ function FloorEditorCanvas({
     const imageRectangle = image.getBoundingClientRect();
 
     const positionX =
-      ((event.clientX - imageRectangle.left) / imageRectangle.width) *
+      ((event.clientX - imageRectangle.left) /
+        imageRectangle.width) *
       100;
 
     const positionY =
-      ((event.clientY - imageRectangle.top) / imageRectangle.height) *
+      ((event.clientY - imageRectangle.top) /
+        imageRectangle.height) *
       100;
 
     return {
       x: Number(clampPercentage(positionX).toFixed(2)),
       y: Number(clampPercentage(positionY).toFixed(2)),
     };
+  };
+
+  const isPointerInsideImage = (event) => {
+    const image = imageRef.current;
+
+    if (!image) {
+      return false;
+    }
+
+    const imageRectangle = image.getBoundingClientRect();
+
+    return (
+      event.clientX >= imageRectangle.left &&
+      event.clientX <= imageRectangle.right &&
+      event.clientY >= imageRectangle.top &&
+      event.clientY <= imageRectangle.bottom
+    );
   };
 
   const handleCanvasClick = (event) => {
@@ -80,21 +100,7 @@ function FloorEditorCanvas({
       return;
     }
 
-    const image = imageRef.current;
-
-    if (!image) {
-      return;
-    }
-
-    const imageRectangle = image.getBoundingClientRect();
-
-    const clickedInsideImage =
-      event.clientX >= imageRectangle.left &&
-      event.clientX <= imageRectangle.right &&
-      event.clientY >= imageRectangle.top &&
-      event.clientY <= imageRectangle.bottom;
-
-    if (!clickedInsideImage) {
+    if (!isPointerInsideImage(event)) {
       return;
     }
 
@@ -134,6 +140,98 @@ function FloorEditorCanvas({
     };
 
     onElementsChange([...elements, newElement]);
+  };
+
+  const handleZonePointerDown = (event) => {
+    if (activeTool !== 'ZONE') {
+      return;
+    }
+
+    if (!isPointerInsideImage(event)) {
+      return;
+    }
+
+    event.preventDefault();
+
+    const position = calculatePointerPosition(event);
+
+    if (!position) {
+      return;
+    }
+
+    setDraftZone({
+      startX: position.x,
+      startY: position.y,
+      x: position.x,
+      y: position.y,
+      width: 0,
+      height: 0,
+    });
+
+    event.currentTarget.setPointerCapture(event.pointerId);
+  };
+
+  const handleZonePointerMove = (event) => {
+    if (activeTool !== 'ZONE' || !draftZone) {
+      return;
+    }
+
+    event.preventDefault();
+
+    const position = calculatePointerPosition(event);
+
+    if (!position) {
+      return;
+    }
+
+    const left = Math.min(draftZone.startX, position.x);
+    const top = Math.min(draftZone.startY, position.y);
+    const width = Math.abs(position.x - draftZone.startX);
+    const height = Math.abs(position.y - draftZone.startY);
+
+    setDraftZone((currentZone) => ({
+      ...currentZone,
+      x: Number(left.toFixed(2)),
+      y: Number(top.toFixed(2)),
+      width: Number(width.toFixed(2)),
+      height: Number(height.toFixed(2)),
+    }));
+  };
+
+  const handleZonePointerUp = (event) => {
+    if (activeTool !== 'ZONE' || !draftZone) {
+      return;
+    }
+
+    event.preventDefault();
+
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+
+    const minimumZoneSize = 2;
+
+    if (
+      draftZone.width >= minimumZoneSize &&
+      draftZone.height >= minimumZoneSize
+    ) {
+      const newZone = {
+        id: createElementId(),
+        type: 'ZONE',
+        name: '',
+        category: 'GENERAL',
+        side: 'CENTER',
+        x: draftZone.x,
+        y: draftZone.y,
+        width: draftZone.width,
+        height: draftZone.height,
+      };
+
+      onElementsChange([...elements, newZone]);
+      onElementSelect(newZone.id);
+    }
+
+    setDraftZone(null);
   };
 
   const handleElementClick = (event, elementId) => {
@@ -216,6 +314,14 @@ function FloorEditorCanvas({
     }
   };
 
+  const zones = elements.filter(
+    (element) => element.type === 'ZONE'
+  );
+
+  const markers = elements.filter(
+    (element) => element.type !== 'ZONE'
+  );
+
   return (
     <section className="floor-editor-canvas">
       <div className="floor-editor-canvas-header">
@@ -226,7 +332,6 @@ function FloorEditorCanvas({
 
         <div className="floor-editor-canvas-status">
           <span>Tool: {activeTool}</span>
-
           <span>{elements.length} στοιχεία</span>
 
           {selectedElement && (
@@ -247,8 +352,16 @@ function FloorEditorCanvas({
             activeTool === 'SELECT'
               ? 'floor-editor-image-stage--selection'
               : ''
+          } ${
+            activeTool === 'ZONE'
+              ? 'floor-editor-image-stage--zone'
+              : ''
           }`}
           onClick={handleCanvasClick}
+          onPointerDown={handleZonePointerDown}
+          onPointerMove={handleZonePointerMove}
+          onPointerUp={handleZonePointerUp}
+          onPointerCancel={handleZonePointerUp}
           role="presentation"
         >
           <img
@@ -258,20 +371,81 @@ function FloorEditorCanvas({
             draggable="false"
           />
 
+          <div className="floor-zones-layer">
+            {zones.map((zone) => {
+              const isSelected = selectedElementId === zone.id;
+
+              return (
+                <button
+                  key={zone.id}
+                  className={`floor-zone ${
+                    isSelected ? 'floor-zone--selected' : ''
+                  } ${
+                    activeTool === 'DELETE'
+                      ? 'floor-zone--deletable'
+                      : ''
+                  }`}
+                  type="button"
+                  style={{
+                    left: `${zone.x}%`,
+                    top: `${zone.y}%`,
+                    width: `${zone.width}%`,
+                    height: `${zone.height}%`,
+                  }}
+                  onClick={(event) =>
+                    handleElementClick(event, zone.id)
+                  }
+                  onPointerDown={(event) =>
+                    event.stopPropagation()
+                  }
+                  title={
+                    zone.name
+                      ? `Zone: ${zone.name}`
+                      : 'Zone χωρίς όνομα'
+                  }
+                >
+                  <span>
+                    {zone.name || 'Νέα Zone'}
+                  </span>
+                </button>
+              );
+            })}
+
+            {draftZone && (
+              <div
+                className="floor-zone floor-zone--draft"
+                style={{
+                  left: `${draftZone.x}%`,
+                  top: `${draftZone.y}%`,
+                  width: `${draftZone.width}%`,
+                  height: `${draftZone.height}%`,
+                }}
+              >
+                <span>Νέα Zone</span>
+              </div>
+            )}
+          </div>
+
           <div className="floor-elements-layer">
-            {elements.map((element) => {
+            {markers.map((element) => {
               const information = elementInformation[element.type];
 
               if (!information) {
                 return null;
               }
 
-              const isSelected = selectedElementId === element.id;
-              const isDragging = draggingElementId === element.id;
+              const isSelected =
+                selectedElementId === element.id;
+
+              const isDragging =
+                draggingElementId === element.id;
 
               let markerLabel = information.label;
 
-              if (element.type === 'OCCUPANT' && element.name) {
+              if (
+                element.type === 'OCCUPANT' &&
+                element.name
+              ) {
                 markerLabel = element.name;
               }
 
@@ -279,7 +453,10 @@ function FloorEditorCanvas({
                 markerLabel = element.name;
               }
 
-              if (element.type === 'FIRE_POINT' && element.area) {
+              if (
+                element.type === 'FIRE_POINT' &&
+                element.area
+              ) {
                 markerLabel = `Φωτιά: ${element.area}`;
               }
 
@@ -309,19 +486,33 @@ function FloorEditorCanvas({
                     handleElementClick(event, element.id)
                   }
                   onPointerDown={(event) =>
-                    handleMarkerPointerDown(event, element.id)
+                    handleMarkerPointerDown(
+                      event,
+                      element.id
+                    )
                   }
                   onPointerMove={(event) =>
-                    handleMarkerPointerMove(event, element.id)
+                    handleMarkerPointerMove(
+                      event,
+                      element.id
+                    )
                   }
                   onPointerUp={(event) =>
-                    handleMarkerPointerUp(event, element.id)
+                    handleMarkerPointerUp(
+                      event,
+                      element.id
+                    )
                   }
                   onPointerCancel={(event) =>
-                    handleMarkerPointerUp(event, element.id)
+                    handleMarkerPointerUp(
+                      event,
+                      element.id
+                    )
                   }
                 >
-                  <span aria-hidden="true">{information.symbol}</span>
+                  <span aria-hidden="true">
+                    {information.symbol}
+                  </span>
 
                   <span className="floor-element-marker-label">
                     {markerLabel}
@@ -333,8 +524,8 @@ function FloorEditorCanvas({
 
           {elements.length === 0 && (
             <div className="floor-editor-helper">
-              Επιλέξτε Occupant, Exit ή Fire Point και κάντε κλικ στην
-              κάτοψη.
+              Επιλέξτε ένα εργαλείο και τοποθετήστε στοιχεία
+              στην κάτοψη.
             </div>
           )}
         </div>

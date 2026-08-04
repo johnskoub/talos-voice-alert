@@ -4,6 +4,7 @@ const elementTypeLabels = {
   OCCUPANT: 'Παρευρισκόμενος',
   EXIT: 'Έξοδος κινδύνου',
   FIRE_POINT: 'Σημείο φωτιάς',
+  ZONE: 'Περιοχή κάτοψης',
 };
 
 function FloorElementProperties({ element, onElementChange }) {
@@ -48,6 +49,63 @@ function FloorElementProperties({ element, onElementChange }) {
         <span>Τύπος</span>
         <strong>{elementTypeLabels[element.type]}</strong>
       </div>
+
+      {element.type === 'ZONE' && (
+        <div className="property-form">
+          <label>
+            <span>Όνομα περιοχής</span>
+
+            <input
+              name="name"
+              type="text"
+              placeholder="π.χ. Server Room"
+              value={element.name ?? ''}
+              onChange={handleInputChange}
+            />
+          </label>
+
+          <label>
+            <span>Κατηγορία</span>
+
+            <select
+              name="category"
+              value={element.category ?? 'GENERAL'}
+              onChange={handleInputChange}
+            >
+              <option value="GENERAL">Γενική περιοχή</option>
+              <option value="OFFICE">Γραφείο</option>
+              <option value="RECEPTION">Reception</option>
+              <option value="STORAGE">Storage</option>
+              <option value="WAREHOUSE">Warehouse</option>
+              <option value="SERVER_ROOM">Server Room</option>
+              <option value="KITCHEN">Kitchen</option>
+              <option value="CORRIDOR">Διάδρομος</option>
+              <option value="MEETING_ROOM">
+                Αίθουσα συσκέψεων
+              </option>
+              <option value="PRODUCTION">
+                Χώρος παραγωγής
+              </option>
+            </select>
+          </label>
+
+          <label>
+            <span>Πλευρά κτιρίου</span>
+
+            <select
+              name="side"
+              value={element.side ?? 'CENTER'}
+              onChange={handleInputChange}
+            >
+              <option value="NORTH">Βόρεια</option>
+              <option value="SOUTH">Νότια</option>
+              <option value="EAST">Ανατολική</option>
+              <option value="WEST">Δυτική</option>
+              <option value="CENTER">Κεντρική</option>
+            </select>
+          </label>
+        </div>
+      )}
 
       {element.type === 'OCCUPANT' && (
         <div className="property-form">
@@ -205,6 +263,21 @@ function FloorElementProperties({ element, onElementChange }) {
           <span>Θέση Y</span>
           <strong>{element.y}%</strong>
         </div>
+
+        {element.type === 'ZONE' && (
+          <>
+            <div>
+              <span>Πλάτος</span>
+              <strong>{element.width}%</strong>
+            </div>
+
+            <div>
+              <span>Ύψος</span>
+              <strong>{element.height}%</strong>
+            </div>
+          </>
+        )}
+        
       </div>
 
       <p className="property-save-information">

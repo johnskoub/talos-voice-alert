@@ -9,6 +9,8 @@ import { loadFloorPlanFromSession } from '../../services/floorPlanStorage';
 import { loadFloorElements, saveFloorElements, } from '../../services/floorElementStorage';
 import FloorElementProperties from '../../components/FloorElementProperties/FloorElementProperties';
 import { findContainingZone } from '../../utils/floorZoneUtils';
+import EvacuationAnalysis from '../../components/EvacuationAnalysis/EvacuationAnalysis';
+import { analyzeEvacuation } from '../../services/evacuationAnalysis';
 import './FloorPlanEditorPage.css';
 
 function FloorPlanEditorPage() {
@@ -21,6 +23,14 @@ function FloorPlanEditorPage() {
     loadFloorElements(Number(companyId), Number(floorId))
   );
   const [saveMessage, setSaveMessage] = useState('');
+  const [evacuationAnalysis, setEvacuationAnalysis] =
+  useState(null);
+
+  const handleRunEvacuationAnalysis = () => {
+  const result = analyzeEvacuation(elements);
+
+  setEvacuationAnalysis(result);
+  };
 
   const handleToolChange = (toolId) => {
     setActiveTool(toolId);
@@ -180,6 +190,12 @@ function FloorPlanEditorPage() {
           onElementChange={handleElementPropertiesChange}
         />
       </div>
+
+      <EvacuationAnalysis
+        analysis={evacuationAnalysis}
+        onRunAnalysis={handleRunEvacuationAnalysis}
+      />
+      
     </PageContainer>
   );
 }

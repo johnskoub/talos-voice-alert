@@ -69,6 +69,7 @@ function FloorEditorCanvas({
   onElementsChange,
   selectedElementId,
   onElementSelect,
+  evacuationRoutes,
 }) {
   const imageRef = useRef(null);
 
@@ -588,6 +589,12 @@ const handleZoneResizePointerUp = (event, zoneId) => {
           <span>Tool: {activeTool}</span>
           <span>{elements.length} στοιχεία</span>
 
+          {evacuationRoutes.length > 0 && (
+            <span className="floor-editor-route-status">
+              {evacuationRoutes.length} διαδρομές
+            </span>
+          )}
+
           {selectedElement && (
             <span>
               x: {selectedElement.x}% · y: {selectedElement.y}%
@@ -725,6 +732,64 @@ const handleZoneResizePointerUp = (event, zoneId) => {
               </div>
             )}
           </div>
+
+          <svg
+            className="evacuation-routes-layer"
+            viewBox="0 0 100 100"
+            preserveAspectRatio="none"
+            aria-label="Προτεινόμενες διαδρομές εκκένωσης"
+          >
+            <defs>
+              <marker
+                id="evacuation-arrow"
+                markerWidth="5"
+                markerHeight="5"
+                refX="4"
+                refY="2.5"
+                orient="auto"
+                markerUnits="strokeWidth"
+              >
+                <path
+                  d="M 0 0 L 5 2.5 L 0 5 z"
+                  className="evacuation-route-arrow"
+                />
+              </marker>
+            </defs>
+
+            {evacuationRoutes.map((route) => {
+              const polylinePoints = route.points
+                .map((point) => `${point.x},${point.y}`)
+                .join(' ');
+
+              return (
+                <g key={route.id}>
+                  <polyline
+                    className="evacuation-route-shadow"
+                    points={polylinePoints}
+                    vectorEffect="non-scaling-stroke"
+                  />
+
+                  <polyline
+                    className="evacuation-route-line"
+                    points={polylinePoints}
+                    vectorEffect="non-scaling-stroke"
+                    markerEnd="url(#evacuation-arrow)"
+                  />
+
+                  {route.points.slice(1, -1).map((point, index) => (
+                    <circle
+                      key={`${route.id}-point-${index}`}
+                      className="evacuation-route-turn"
+                      cx={point.x}
+                      cy={point.y}
+                      r="0.65"
+                      vectorEffect="non-scaling-stroke"
+                    />
+                  ))}
+                </g>
+              );
+            })}
+          </svg>
 
           <div className="floor-elements-layer">
             {markers.map((element) => {

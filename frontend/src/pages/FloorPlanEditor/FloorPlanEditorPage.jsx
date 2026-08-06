@@ -11,6 +11,7 @@ import FloorElementProperties from '../../components/FloorElementProperties/Floo
 import { findContainingZone } from '../../utils/floorZoneUtils';
 import EvacuationAnalysis from '../../components/EvacuationAnalysis/EvacuationAnalysis';
 import { analyzeEvacuation } from '../../services/evacuationAnalysis';
+import { generateEvacuationRoutes } from '../../services/evacuationRouteGenerator';
 import './FloorPlanEditorPage.css';
 
 function FloorPlanEditorPage() {
@@ -26,10 +27,14 @@ function FloorPlanEditorPage() {
   const [evacuationAnalysis, setEvacuationAnalysis] =
   useState(null);
 
-  const handleRunEvacuationAnalysis = () => {
-  const result = analyzeEvacuation(elements);
+  const [evacuationRoutes, setEvacuationRoutes] = useState([]);
 
-  setEvacuationAnalysis(result);
+  const handleRunEvacuationAnalysis = () => {
+    const result = analyzeEvacuation(elements);
+    const generatedRoutes = generateEvacuationRoutes(result);
+
+    setEvacuationAnalysis(result);
+    setEvacuationRoutes(generatedRoutes);
   };
 
   const handleToolChange = (toolId) => {
@@ -41,8 +46,8 @@ function FloorPlanEditorPage() {
   };
 
   const handleElementPropertiesChange = (
-  elementId,
-  changedProperties
+    elementId,
+    changedProperties
   ) => {
     setElements((currentElements) =>
       currentElements.map((element) =>
@@ -54,6 +59,9 @@ function FloorPlanEditorPage() {
           : element
       )
     );
+
+    setEvacuationAnalysis(null);
+    setEvacuationRoutes([]);
   };
 
   const numericCompanyId = Number(companyId);
@@ -82,6 +90,17 @@ function FloorPlanEditorPage() {
     selectedElement,
     elements
   );
+
+  const handleElementsChange = (updatedElements) => {
+    setElements(updatedElements);
+
+    /*
+    * Η υπάρχουσα ανάλυση θεωρείται παλιά μετά από οποιαδήποτε
+    * μετακίνηση, προσθήκη, διαγραφή ή αλλαγή ιδιοτήτων.
+    */
+    setEvacuationAnalysis(null);
+    setEvacuationRoutes([]);
+  };
 
   const handleSaveChanges = () => {
   saveFloorElements(
@@ -176,14 +195,16 @@ function FloorPlanEditorPage() {
         />
 
         <FloorEditorCanvas
-            imageUrl={storedFloorPlan.imageDataUrl}
-            imageName={storedFloorPlan.imageName}
-            activeTool={activeTool}
-            elements={elements}
-            onElementsChange={setElements}
-            selectedElementId={selectedElementId}
-            onElementSelect={setSelectedElementId}
+          imageUrl={storedFloorPlan.imageDataUrl}
+          imageName={storedFloorPlan.imageName}
+          activeTool={activeTool}
+          elements={elements}
+          onElementsChange={handleElementsChange}
+          selectedElementId={selectedElementId}
+          onElementSelect={setSelectedElementId}
+          evacuationRoutes={evacuationRoutes}
         />
+
         <FloorElementProperties
           element={selectedElement}
           containingZone={selectedElementZone}
@@ -195,7 +216,7 @@ function FloorPlanEditorPage() {
         analysis={evacuationAnalysis}
         onRunAnalysis={handleRunEvacuationAnalysis}
       />
-      
+
     </PageContainer>
   );
 }

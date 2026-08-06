@@ -5,6 +5,10 @@ const elementTypeLabels = {
   EXIT: 'Έξοδος κινδύνου',
   FIRE_POINT: 'Σημείο φωτιάς',
   ZONE: 'Περιοχή κάτοψης',
+  STAIR: 'Σκάλα',
+  ELEVATOR: 'Ανελκυστήρας',
+  EXTINGUISHER: 'Πυροσβεστήρας',
+  ASSEMBLY_POINT: 'Σημείο συγκέντρωσης',
 };
 
 function FloorElementProperties({ element, containingZone, onElementChange,}) {
@@ -118,6 +122,178 @@ function FloorElementProperties({ element, containingZone, onElementChange,}) {
               <option value="EAST">Ανατολική</option>
               <option value="WEST">Δυτική</option>
               <option value="CENTER">Κεντρική</option>
+            </select>
+          </label>
+        </div>
+      )}
+
+      {element.type === 'STAIR' && (
+        <div className="property-form">
+          <label>
+            <span>Όνομα σκάλας</span>
+
+            <input
+              name="name"
+              type="text"
+              placeholder="π.χ. Κεντρική σκάλα"
+              value={element.name ?? ''}
+              onChange={handleInputChange}
+            />
+          </label>
+
+          <label>
+            <span>Κατεύθυνση</span>
+
+            <select
+              name="direction"
+              value={element.direction ?? 'UP_DOWN'}
+              onChange={handleInputChange}
+            >
+              <option value="UP">Προς τα πάνω</option>
+              <option value="DOWN">Προς τα κάτω</option>
+              <option value="UP_DOWN">Και προς τις δύο κατευθύνσεις</option>
+            </select>
+          </label>
+
+          <label>
+            <span>Κατάσταση</span>
+
+            <select
+              name="status"
+              value={element.status ?? 'AVAILABLE'}
+              onChange={handleInputChange}
+            >
+              <option value="AVAILABLE">Διαθέσιμη</option>
+              <option value="BLOCKED">Αποκλεισμένη</option>
+              <option value="UNAVAILABLE">Μη διαθέσιμη</option>
+            </select>
+          </label>
+        </div>
+      )}
+
+      {element.type === 'ELEVATOR' && (
+        <div className="property-form">
+          <label>
+            <span>Όνομα ανελκυστήρα</span>
+
+            <input
+              name="name"
+              type="text"
+              placeholder="π.χ. Ανελκυστήρας Α"
+              value={element.name ?? ''}
+              onChange={handleInputChange}
+            />
+          </label>
+
+          <label>
+            <span>Κατάσταση</span>
+
+            <select
+              name="status"
+              value={element.status ?? 'AVAILABLE'}
+              onChange={handleInputChange}
+            >
+              <option value="AVAILABLE">Διαθέσιμος</option>
+              <option value="MAINTENANCE">Σε συντήρηση</option>
+              <option value="UNAVAILABLE">Μη διαθέσιμος</option>
+            </select>
+          </label>
+
+          <label className="property-checkbox">
+            <input
+              name="disabledDuringFire"
+              type="checkbox"
+              checked={Boolean(element.disabledDuringFire)} // if disabledDuringFire = true, It will not be used as an evacuation route.
+              onChange={handleInputChange}
+            />
+
+            <span>Απενεργοποίηση σε περίπτωση φωτιάς</span>
+          </label>
+        </div>
+      )}
+
+      {element.type === 'EXTINGUISHER' && (
+        <div className="property-form">
+          <label>
+            <span>Όνομα πυροσβεστήρα</span>
+
+            <input
+              name="name"
+              type="text"
+              placeholder="π.χ. Πυροσβεστήρας SR-01"
+              value={element.name ?? ''}
+              onChange={handleInputChange}
+            />
+          </label>
+
+          <label>
+            <span>Τύπος πυροσβεστήρα</span>
+
+            <select
+              name="extinguisherType"
+              value={element.extinguisherType ?? 'ABC'}
+              onChange={handleInputChange}
+            >
+              <option value="ABC">Ξηράς κόνεως ABC</option>
+              <option value="CO2">Διοξειδίου του άνθρακα CO₂</option>
+              <option value="FOAM">Αφρού</option>
+              <option value="WATER">Νερού</option>
+            </select>
+          </label>
+
+          <label>
+            <span>Κατάσταση</span>
+
+            <select
+              name="status"
+              value={element.status ?? 'AVAILABLE'}
+              onChange={handleInputChange}
+            >
+              <option value="AVAILABLE">Διαθέσιμος</option>
+              <option value="USED">Χρησιμοποιημένος</option>
+              <option value="MAINTENANCE">Χρειάζεται συντήρηση</option>
+            </select>
+          </label>
+        </div>
+      )}
+
+      {element.type === 'ASSEMBLY_POINT' && (
+        <div className="property-form">
+          <label>
+            <span>Όνομα σημείου</span>
+
+            <input
+              name="name"
+              type="text"
+              placeholder="π.χ. Σημείο συγκέντρωσης Α"
+              value={element.name ?? ''}
+              onChange={handleInputChange}
+            />
+          </label>
+
+          <label>
+            <span>Χωρητικότητα</span>
+
+            <input
+              name="capacity"
+              type="number"
+              min="1"
+              value={element.capacity ?? 50}
+              onChange={handleInputChange}
+            />
+          </label>
+
+          <label>
+            <span>Κατάσταση</span>
+
+            <select
+              name="status"
+              value={element.status ?? 'AVAILABLE'}
+              onChange={handleInputChange}
+            >
+              <option value="AVAILABLE">Διαθέσιμο</option>
+              <option value="FULL">Πλήρες</option>
+              <option value="UNAVAILABLE">Μη διαθέσιμο</option>
             </select>
           </label>
         </div>

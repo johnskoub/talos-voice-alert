@@ -115,9 +115,10 @@
   font: inherit;
   cursor: default;
   pointer-events: auto;
+  touch-action: none;
 }
 
-.floor-zone span {
+.floor-zone-label {
   padding: 3px 6px;
   border-radius: 4px;
   background: rgba(255, 255, 255, 0.9);
@@ -147,6 +148,44 @@
 
 .floor-zone--deletable:hover {
   background: rgba(220, 38, 38, 0.22);
+}
+
+.floor-editor-image-stage--selection .floor-zone {
+  cursor: grab;
+}
+
+.floor-editor-image-stage--selection .floor-zone:active {
+  cursor: grabbing;
+}
+
+.floor-zone--dragging {
+  z-index: 6;
+  cursor: grabbing;
+  opacity: 0.82;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.25);
+}
+
+.floor-zone--resizing {
+  z-index: 7;
+}
+
+.floor-zone-resize-handle {
+  position: absolute;
+  right: -7px;
+  bottom: -7px;
+  width: 15px;
+  height: 15px;
+  border: 2px solid #ffffff;
+  border-radius: 4px;
+  background: #dc2626;
+  cursor: nwse-resize;
+  pointer-events: auto;
+  touch-action: none;
+  box-shadow: 0 2px 7px rgba(15, 23, 42, 0.35);
+}
+
+.floor-zone-resize-handle:hover {
+  transform: scale(1.15);
 }
 
 .floor-element-marker {
@@ -211,6 +250,22 @@
 
 .floor-element-marker--fire_point {
   background: #dc2626;
+}
+
+.floor-element-marker--stair {
+  background: #7c3aed;
+}
+
+.floor-element-marker--elevator {
+  background: #475569;
+}
+
+.floor-element-marker--extinguisher {
+  background: #ea580c;
+}
+
+.floor-element-marker--assembly_point {
+  background: #0891b2;
 }
 
 .floor-element-marker--deletable {

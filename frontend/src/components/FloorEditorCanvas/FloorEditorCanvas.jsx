@@ -1,7 +1,15 @@
 import { useRef, useState } from 'react';
 import './FloorEditorCanvas.css';
 
-const placeableTools = ['OCCUPANT', 'EXIT', 'FIRE_POINT'];
+const placeableTools = [
+  'OCCUPANT',
+  'EXIT',
+  'FIRE_POINT',
+  'STAIR',
+  'ELEVATOR',
+  'EXTINGUISHER',
+  'ASSEMBLY_POINT',
+];
 
 const elementInformation = {
   OCCUPANT: {
@@ -15,6 +23,25 @@ const elementInformation = {
   FIRE_POINT: {
     symbol: '▲',
     label: 'Σημείο φωτιάς',
+  },
+  STAIR: {
+    symbol: '≋',
+    label: 'Σκάλα',
+  },
+
+  ELEVATOR: {
+    symbol: '↕',
+    label: 'Ανελκυστήρας',
+  },
+
+  EXTINGUISHER: {
+    symbol: 'E',
+    label: 'Πυροσβεστήρας',
+  },
+
+  ASSEMBLY_POINT: {
+    symbol: '◎',
+    label: 'Σημείο συγκέντρωσης',
   },
 };
 
@@ -30,6 +57,10 @@ function clampPercentage(value) {
   return Math.min(100, Math.max(0, value));
 }
 
+function clampValue(value, minimum, maximum) {
+  return Math.min(maximum, Math.max(minimum, value));
+}
+
 function FloorEditorCanvas({
   imageUrl,
   imageName,
@@ -43,6 +74,9 @@ function FloorEditorCanvas({
 
   const [draggingElementId, setDraggingElementId] = useState(null);
   const [draftZone, setDraftZone] = useState(null);
+
+  const [draggingZone, setDraggingZone] = useState(null);
+  const [resizingZone, setResizingZone] = useState(null);
 
   const selectedElement = elements.find(
     (element) => element.id === selectedElementId
@@ -128,6 +162,30 @@ function FloorEditorCanvas({
         side: 'WEST',
         severity: 'MEDIUM',
         smoke: false,
+      },
+
+      STAIR: {
+        name: '',
+        direction: 'UP_DOWN',
+        status: 'AVAILABLE',
+      },
+
+      ELEVATOR: {
+        name: '',
+        status: 'AVAILABLE',
+        disabledDuringFire: true,
+      },
+
+      EXTINGUISHER: {
+        name: '',
+        extinguisherType: 'ABC',
+        status: 'AVAILABLE',
+      },
+
+      ASSEMBLY_POINT: {
+        name: '',
+        capacity: 50,
+        status: 'AVAILABLE',
       },
     };
 
@@ -234,6 +292,98 @@ function FloorEditorCanvas({
     setDraftZone(null);
   };
 
+  const handleZoneDragPointerDown = (event, zone) => {
+  if (activeTool !== 'SELECT') {
+    return;
+  }
+
+  event.preventDefault();
+  event.stopPropagation();
+
+  const position = calculatePointerPosition(event);
+
+  if (!position) {
+    return;
+  }
+
+  onElementSelect(zone.id);
+
+  setDraggingZone({
+    id: zone.id,
+    offsetX: position.x - zone.x,
+    offsetY: position.y - zone.y,
+  });
+
+  event.currentTarget.setPointerCapture(event.pointerId);
+};
+
+const handleZoneDragPointerMove = (event, zoneId) => {
+  if (
+    activeTool !== 'SELECT' ||
+    draggingZone?.id !== zoneId
+  ) {
+    return;
+  }
+
+  event.preventDefault();
+  event.stopPropagation();
+
+  const position = calculatePointerPosition(event);
+
+  if (!position) {
+    return;
+  }
+
+  const zone = elements.find(
+    (element) =>
+      element.id === zoneId &&
+      element.type === 'ZONE'
+  );
+
+  if (!zone) {
+    return;
+  }
+
+  const newX = clampValue(
+    position.x - draggingZone.offsetX,
+    0,
+    100 - zone.width
+  );
+
+  const newY = clampValue(
+    position.y - draggingZone.offsetY,
+    0,
+    100 - zone.height
+  );
+
+  const updatedElements = elements.map((element) =>
+    element.id === zoneId
+      ? {
+          ...element,
+          x: Number(newX.toFixed(2)),
+          y: Number(newY.toFixed(2)),
+        }
+      : element
+  );
+
+  onElementsChange(updatedElements);
+};
+
+const handleZoneDragPointerUp = (event, zoneId) => {
+  if (draggingZone?.id !== zoneId) {
+    return;
+  }
+
+  event.preventDefault();
+  event.stopPropagation();
+
+  setDraggingZone(null);
+
+  if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+    event.currentTarget.releasePointerCapture(event.pointerId);
+  }
+};
+
   const handleElementClick = (event, elementId) => {
     if (activeTool === 'DELETE') {
       event.stopPropagation();
@@ -315,6 +465,109 @@ function FloorEditorCanvas({
     }
   };
 
+  const handleZoneResizePointerDown = (event, zone) => {
+  if (activeTool !== 'SELECT') {
+    return;
+  }
+
+  event.preventDefault();
+  event.stopPropagation();
+
+  const position = calculatePointerPosition(event);
+
+  if (!position) {
+    return;
+  }
+
+  onElementSelect(zone.id);
+
+  setResizingZone({
+    id: zone.id,
+    startX: position.x,
+    startY: position.y,
+    initialWidth: zone.width,
+    initialHeight: zone.height,
+  });
+
+  event.currentTarget.setPointerCapture(event.pointerId);
+};
+
+const handleZoneResizePointerMove = (event, zoneId) => {
+  if (
+    activeTool !== 'SELECT' ||
+    resizingZone?.id !== zoneId
+  ) {
+    return;
+  }
+
+  event.preventDefault();
+  event.stopPropagation();
+
+  const position = calculatePointerPosition(event);
+
+  if (!position) {
+    return;
+  }
+
+  const zone = elements.find(
+    (element) =>
+      element.id === zoneId &&
+      element.type === 'ZONE'
+  );
+
+  if (!zone) {
+    return;
+  }
+
+  const widthDifference =
+    position.x - resizingZone.startX;
+
+  const heightDifference =
+    position.y - resizingZone.startY;
+
+  const minimumZoneSize = 2;
+
+  const newWidth = clampValue(
+    resizingZone.initialWidth + widthDifference,
+    minimumZoneSize,
+    100 - zone.x
+  );
+
+  const newHeight = clampValue(
+    resizingZone.initialHeight + heightDifference,
+    minimumZoneSize,
+    100 - zone.y
+  );
+
+  const updatedElements = elements.map((element) =>
+    element.id === zoneId
+      ? {
+          ...element,
+          width: Number(newWidth.toFixed(2)),
+          height: Number(newHeight.toFixed(2)),
+        }
+      : element
+  );
+
+  onElementsChange(updatedElements);
+};
+
+const handleZoneResizePointerUp = (event, zoneId) => {
+  if (resizingZone?.id !== zoneId) {
+    return;
+  }
+
+  event.preventDefault();
+  event.stopPropagation();
+
+  setResizingZone(null);
+
+  if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+    event.currentTarget.releasePointerCapture(event.pointerId);
+  }
+};
+
+
   const zones = elements.filter(
     (element) => element.type === 'ZONE'
   );
@@ -376,6 +629,9 @@ function FloorEditorCanvas({
             {zones.map((zone) => {
               const isSelected = selectedElementId === zone.id;
 
+              const isDraggingZone = draggingZone?.id === zone.id;
+              const isResizingZone = resizingZone?.id === zone.id;
+
               return (
                 <button
                   key={zone.id}
@@ -384,6 +640,14 @@ function FloorEditorCanvas({
                   } ${
                     activeTool === 'DELETE'
                       ? 'floor-zone--deletable'
+                      : ''
+                  } ${
+                    isDraggingZone
+                      ? 'floor-zone--dragging'
+                      : ''
+                  } ${
+                    isResizingZone
+                      ? 'floor-zone--resizing'
                       : ''
                   }`}
                   type="button"
@@ -397,22 +661,52 @@ function FloorEditorCanvas({
                     handleElementClick(event, zone.id)
                   }
                   onPointerDown={(event) => {
-                    if (
-                      activeTool === 'SELECT' ||
-                      activeTool === 'DELETE'
-                    ) {
+                    if (activeTool === 'SELECT') {
+                      handleZoneDragPointerDown(event, zone);
+                      return;
+                    }
+
+                    if (activeTool === 'DELETE') {
                       event.stopPropagation();
                     }
                   }}
+                  onPointerMove={(event) =>
+                    handleZoneDragPointerMove(event, zone.id)
+                  }
+                  onPointerUp={(event) =>
+                    handleZoneDragPointerUp(event, zone.id)
+                  }
+                  onPointerCancel={(event) =>
+                    handleZoneDragPointerUp(event, zone.id)
+                  }
                   title={
                     zone.name
                       ? `Zone: ${zone.name}`
                       : 'Zone χωρίς όνομα'
                   }
                 >
-                  <span>
+                  <span className="floor-zone-label">
                     {zone.name || 'Νέα Zone'}
                   </span>
+
+                  {activeTool === 'SELECT' && isSelected && (
+                    <span
+                      className="floor-zone-resize-handle"
+                      aria-hidden="true"
+                      onPointerDown={(event) =>
+                        handleZoneResizePointerDown(event, zone)
+                      }
+                      onPointerMove={(event) =>
+                        handleZoneResizePointerMove(event, zone.id)
+                      }
+                      onPointerUp={(event) =>
+                        handleZoneResizePointerUp(event, zone.id)
+                      }
+                      onPointerCancel={(event) =>
+                        handleZoneResizePointerUp(event, zone.id)
+                      }
+                    />
+                  )}
                 </button>
               );
             })}
@@ -464,6 +758,15 @@ function FloorEditorCanvas({
                 element.area
               ) {
                 markerLabel = `Φωτιά: ${element.area}`;
+              }
+
+              if (
+                ['STAIR', 'ELEVATOR', 'EXTINGUISHER', 'ASSEMBLY_POINT'].includes(
+                  element.type
+                ) &&
+                element.name
+              ) {
+                markerLabel = element.name;
               }
 
               return (

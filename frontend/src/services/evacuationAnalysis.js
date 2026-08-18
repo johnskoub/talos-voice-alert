@@ -67,10 +67,6 @@ function evaluateExitSafety({
     rejectionReasons.push('EXIT_INSIDE_FIRE_ZONE');
   }
 
-  if (exitIsOnFireSide) {
-    rejectionReasons.push('EXIT_ON_FIRE_SIDE');
-  }
-
   if (exitIsTooCloseToFire) {
     rejectionReasons.push('EXIT_TOO_CLOSE_TO_FIRE');
   }
@@ -81,6 +77,7 @@ function evaluateExitSafety({
     fireToExitDistance: Number(
       fireToExitDistance.toFixed(2)
     ),
+    exitIsOnFireSide,
     rejectionReasons,
   };
 }
@@ -101,9 +98,13 @@ function calculateSafeExitScore({
    * Η απόσταση της εξόδου από τη φωτιά λειτουργεί ως
    * πρόσθετο θετικό κριτήριο.
    */
-  const score =
+  let score =
     exitEvaluation.fireToExitDistance * 1.5 -
     occupantToExitDistance;
+
+  if (exitEvaluation.exitIsOnFireSide) {
+    score -= 15;
+  }
 
   return {
     exit: exitEvaluation.exit,

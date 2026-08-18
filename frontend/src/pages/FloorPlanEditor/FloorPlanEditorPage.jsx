@@ -12,6 +12,8 @@ import { findContainingZone } from '../../utils/floorZoneUtils';
 import EvacuationAnalysis from '../../components/EvacuationAnalysis/EvacuationAnalysis';
 import { analyzeEvacuation } from '../../services/evacuationAnalysis';
 import { generateEvacuationRoutes } from '../../services/evacuationRouteGenerator';
+import EmergencyAlert from '../../components/EmergencyAlert/EmergencyAlert';
+import { generateEmergencyAlert } from '../../services/emergencyAlertGenerator';
 import './FloorPlanEditorPage.css';
 
 function FloorPlanEditorPage() {
@@ -29,12 +31,19 @@ function FloorPlanEditorPage() {
 
   const [evacuationRoutes, setEvacuationRoutes] = useState([]);
 
+  const [emergencyAlert, setEmergencyAlert] =
+    useState(null);
+
   const handleRunEvacuationAnalysis = () => {
     const result = analyzeEvacuation(elements);
-    const generatedRoutes = generateEvacuationRoutes(result);
+    const generatedRoutes =
+      generateEvacuationRoutes(result);
+    const generatedAlert =
+      generateEmergencyAlert(result);
 
     setEvacuationAnalysis(result);
     setEvacuationRoutes(generatedRoutes);
+    setEmergencyAlert(generatedAlert);
   };
 
   const handleToolChange = (toolId) => {
@@ -100,6 +109,7 @@ function FloorPlanEditorPage() {
     */
     setEvacuationAnalysis(null);
     setEvacuationRoutes([]);
+    setEmergencyAlert(null);
   };
 
   const handleSaveChanges = () => {
@@ -216,6 +226,8 @@ function FloorPlanEditorPage() {
         analysis={evacuationAnalysis}
         onRunAnalysis={handleRunEvacuationAnalysis}
       />
+
+      <EmergencyAlert alert={emergencyAlert} />
 
     </PageContainer>
   );

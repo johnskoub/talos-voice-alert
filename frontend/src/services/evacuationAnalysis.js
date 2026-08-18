@@ -1,5 +1,7 @@
 import { findContainingZone } from '../utils/floorZoneUtils';
 
+const MINIMUM_SAFE_FIRE_DISTANCE = 18;
+
 function calculateDistance(firstPoint, secondPoint) {
   const horizontalDifference = secondPoint.x - firstPoint.x;
   const verticalDifference = secondPoint.y - firstPoint.y;
@@ -9,61 +11,126 @@ function calculateDistance(firstPoint, secondPoint) {
   );
 }
 
-function isExitUsable(exit) {
+function isExitOperational(exit) {
   return exit.status === 'AVAILABLE';
 }
 
-function calculateExitScore({
-  occupant,
+function isPointInsideZone(point, zone) {
+  if (!point || !zone) {
+    return false;
+  }
+
+  const zoneRight = zone.x + zone.width;
+  const zoneBottom = zone.y + zone.height;
+
+  return (
+    point.x >= zone.x &&
+    point.x <= zoneRight &&
+    point.y >= zone.y &&
+    point.y <= zoneBottom
+  );
+}
+
+function evaluateExitSafety({
   exit,
   firePoint,
   fireZone,
+  effectiveFireSide,
 }) {
-  const occupantToExitDistance = calculateDistance(
-    occupant,
-    exit
-  );
-
   const fireToExitDistance = calculateDistance(
     firePoint,
     exit
   );
 
-  let score =
-    fireToExitDistance * 1.5 -
-    occupantToExitDistance;
+  const exitIsOperational = isExitOperational(exit);
+
+  const exitIsInsideFireZone = isPointInsideZone(
+    exit,
+    fireZone
+  );
 
   const exitIsOnFireSide =
-    firePoint.side &&
-    exit.side &&
-    firePoint.side === exit.side;
+    Boolean(effectiveFireSide) &&
+    Boolean(exit.side) &&
+    effectiveFireSide === exit.side;
 
-  if (exitIsOnFireSide) {
-    score -= 100;
+  const exitIsTooCloseToFire =
+    fireToExitDistance < MINIMUM_SAFE_FIRE_DISTANCE;
+
+  const rejectionReasons = [];
+
+  if (!exitIsOperational) {
+    rejectionReasons.push('EXIT_NOT_AVAILABLE');
   }
 
-  const exitIsInsideFireZone =
-    fireZone &&
-    exit.x >= fireZone.x &&
-    exit.x <= fireZone.x + fireZone.width &&
-    exit.y >= fireZone.y &&
-    exit.y <= fireZone.y + fireZone.height;
-
   if (exitIsInsideFireZone) {
-    score -= 200;
+    rejectionReasons.push('EXIT_INSIDE_FIRE_ZONE');
+  }
+
+  if (exitIsOnFireSide) {
+    rejectionReasons.push('EXIT_ON_FIRE_SIDE');
+  }
+
+  if (exitIsTooCloseToFire) {
+    rejectionReasons.push('EXIT_TOO_CLOSE_TO_FIRE');
   }
 
   return {
     exit,
+    safe: rejectionReasons.length === 0,
+    fireToExitDistance: Number(
+      fireToExitDistance.toFixed(2)
+    ),
+    rejectionReasons,
+  };
+}
+
+function calculateSafeExitScore({
+  occupant,
+  exitEvaluation,
+}) {
+  const occupantToExitDistance = calculateDistance(
+    occupant,
+    exitEvaluation.exit
+  );
+
+  /*
+   * Όσο μικρότερη είναι η απόσταση του παρευρισκόμενου
+   * από την ασφαλή έξοδο, τόσο μεγαλύτερο είναι το score.
+   *
+   * Η απόσταση της εξόδου από τη φωτιά λειτουργεί ως
+   * πρόσθετο θετικό κριτήριο.
+   */
+  const score =
+    exitEvaluation.fireToExitDistance * 1.5 -
+    occupantToExitDistance;
+
+  return {
+    exit: exitEvaluation.exit,
     score: Number(score.toFixed(2)),
     occupantToExitDistance: Number(
       occupantToExitDistance.toFixed(2)
     ),
-    fireToExitDistance: Number(
-      fireToExitDistance.toFixed(2)
-    ),
-    exitIsOnFireSide,
-    exitIsInsideFireZone,
+    fireToExitDistance:
+      exitEvaluation.fireToExitDistance,
+  };
+}
+
+function createShelterRecommendation({
+  occupant,
+  occupantZone,
+}) {
+  return {
+    action: 'SHELTER_IN_PLACE',
+    occupant,
+    occupantZone,
+    recommendedExit: null,
+    score: null,
+    occupantToExitDistance: null,
+    fireToExitDistance: null,
+    alternatives: [],
+    instruction:
+      'Δεν υπάρχει ασφαλής έξοδος σύμφωνα με τους κανόνες της προσομοίωσης.',
   };
 }
 
@@ -75,9 +142,7 @@ export function analyzeEvacuation(elements) {
   );
 
   const exits = elements.filter(
-    (element) =>
-      element.type === 'EXIT' &&
-      isExitUsable(element)
+    (element) => element.type === 'EXIT'
   );
 
   const firePoints = elements.filter(
@@ -95,9 +160,10 @@ export function analyzeEvacuation(elements) {
   if (!firePoint) {
     return {
       success: false,
-      message:
-        'Δεν υπάρχει Fire Point στην κάτοψη.',
+      message: 'Δεν υπάρχει Fire Point στην κάτοψη.',
       recommendations: [],
+      rejectedExits: [],
+      safeExits: [],
     };
   }
 
@@ -107,6 +173,8 @@ export function analyzeEvacuation(elements) {
       message:
         'Δεν υπάρχουν ενεργοί παρευρισκόμενοι στην κάτοψη.',
       recommendations: [],
+      rejectedExits: [],
+      safeExits: [],
     };
   }
 
@@ -114,8 +182,10 @@ export function analyzeEvacuation(elements) {
     return {
       success: false,
       message:
-        'Δεν υπάρχει διαθέσιμη έξοδος κινδύνου.',
+        'Δεν υπάρχει καταχωρισμένη έξοδος κινδύνου.',
       recommendations: [],
+      rejectedExits: [],
+      safeExits: [],
     };
   }
 
@@ -124,26 +194,59 @@ export function analyzeEvacuation(elements) {
     elements
   );
 
+  //Fire Point μέσα σε Server Room -> χρησιμοποιούμε την πλευρά της Server Room
+  //Fire Point εκτός όλων των Zones -> δεν κάνουμε hard rejection βάσει EAST/WEST
+  const effectiveFireSide =  
+    fireZone?.side ?? null; 
+
+  const exitSafetyEvaluations = exits.map((exit) =>
+    evaluateExitSafety({
+      exit,
+      firePoint,
+      fireZone,
+      effectiveFireSide,
+    })
+  );
+
+  const safeExitEvaluations =
+    exitSafetyEvaluations.filter(
+      (evaluation) => evaluation.safe
+    );
+
+  const rejectedExits =
+    exitSafetyEvaluations.filter(
+      (evaluation) => !evaluation.safe
+    );
+
   const recommendations = occupants.map((occupant) => {
     const occupantZone = findContainingZone(
       occupant,
       elements
     );
 
-    const exitEvaluations = exits
-      .map((exit) =>
-        calculateExitScore({
+    if (safeExitEvaluations.length === 0) {
+      return createShelterRecommendation({
+        occupant,
+        occupantZone,
+      });
+    }
+
+    const exitEvaluations = safeExitEvaluations
+      .map((exitEvaluation) =>
+        calculateSafeExitScore({
           occupant,
-          exit,
-          firePoint,
-          fireZone,
+          exitEvaluation,
         })
       )
-      .sort((first, second) => second.score - first.score);
+      .sort(
+        (firstEvaluation, secondEvaluation) =>
+          secondEvaluation.score - firstEvaluation.score
+      );
 
     const bestEvaluation = exitEvaluations[0];
 
     return {
+      action: 'EVACUATE',
       occupant,
       occupantZone,
       recommendedExit: bestEvaluation.exit,
@@ -153,6 +256,8 @@ export function analyzeEvacuation(elements) {
       fireToExitDistance:
         bestEvaluation.fireToExitDistance,
       alternatives: exitEvaluations,
+      instruction:
+        'Κατευθυνθείτε προς την προτεινόμενη ασφαλή έξοδο.',
     };
   });
 
@@ -160,7 +265,10 @@ export function analyzeEvacuation(elements) {
     success: true,
     firePoint,
     fireZone,
+    effectiveFireSide,
     disabledElevators,
+    safeExits: safeExitEvaluations,
+    rejectedExits,
     recommendations,
   };
 }

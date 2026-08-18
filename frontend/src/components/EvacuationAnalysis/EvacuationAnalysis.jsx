@@ -1,5 +1,15 @@
 import './EvacuationAnalysis.css';
 
+const rejectionReasonLabels = {
+  EXIT_NOT_AVAILABLE: 'Η έξοδος δεν είναι διαθέσιμη',
+  EXIT_INSIDE_FIRE_ZONE:
+    'Η έξοδος βρίσκεται μέσα στη Zone της φωτιάς',
+  EXIT_ON_FIRE_SIDE:
+    'Η έξοδος βρίσκεται στην πλευρά της φωτιάς',
+  EXIT_TOO_CLOSE_TO_FIRE:
+    'Η έξοδος βρίσκεται πολύ κοντά στη φωτιά',
+};
+
 function getElementName(element, fallback) {
   return element?.name?.trim() || fallback;
 }
@@ -26,14 +36,17 @@ function EvacuationAnalysis({
           <h4>Δεν έχει εκτελεστεί ανάλυση</h4>
 
           <p>
-            Τοποθετήστε τουλάχιστον έναν παρευρισκόμενο,
-            ένα Fire Point και δύο διαθέσιμες εξόδους.
+            Τοποθετήστε παρευρισκόμενους, Fire Point και
+            εξόδους κινδύνου.
           </p>
         </div>
       )}
 
       {analysis && !analysis.success && (
-        <div className="evacuation-analysis-error" role="alert">
+        <div
+          className="evacuation-analysis-error"
+          role="alert"
+        >
           {analysis.message}
         </div>
       )}
@@ -55,68 +68,132 @@ function EvacuationAnalysis({
               <span>Πλευρά φωτιάς</span>
 
               <strong>
-                {analysis.fireZone?.side ||
-                  analysis.firePoint.side ||
-                  'Δεν έχει οριστεί'}
+                {analysis.effectiveFireSide || 'Δεν έχει οριστεί'}
               </strong>
             </div>
 
             <div>
-              <span>Απενεργοποιημένοι ανελκυστήρες</span>
+              <span>Ασφαλείς έξοδοι</span>
+              <strong>{analysis.safeExits.length}</strong>
+            </div>
 
-              <strong>
-                {analysis.disabledElevators.length}
-              </strong>
+            <div>
+              <span>Απορριφθείσες έξοδοι</span>
+              <strong>{analysis.rejectedExits.length}</strong>
             </div>
           </div>
 
+          {analysis.rejectedExits.length > 0 && (
+            <section className="rejected-exits">
+              <h4>Έξοδοι που αποκλείστηκαν</h4>
+
+              <div className="rejected-exits-list">
+                {analysis.rejectedExits.map(
+                  (evaluation) => (
+                    <article key={evaluation.exit.id}>
+                      <strong>
+                        {getElementName(
+                          evaluation.exit,
+                          'Έξοδος κινδύνου'
+                        )}
+                      </strong>
+
+                      <ul>
+                        {evaluation.rejectionReasons.map(
+                          (reason) => (
+                            <li key={reason}>
+                              {rejectionReasonLabels[reason]}
+                            </li>
+                          )
+                        )}
+                      </ul>
+                    </article>
+                  )
+                )}
+              </div>
+            </section>
+          )}
+
           <div className="evacuation-recommendations">
             {analysis.recommendations.map(
-              (recommendation) => (
-                <article
-                  className="evacuation-recommendation"
-                  key={recommendation.occupant.id}
-                >
-                  <div>
-                    <span>Παρευρισκόμενος</span>
+              (recommendation) => {
+                const shelterInPlace =
+                  recommendation.action ===
+                  'SHELTER_IN_PLACE';
 
-                    <h4>
-                      {getElementName(
-                        recommendation.occupant,
-                        'Χωρίς όνομα'
-                      )}
-                    </h4>
+                return (
+                  <article
+                    className={`evacuation-recommendation ${
+                      shelterInPlace
+                        ? 'evacuation-recommendation--shelter'
+                        : ''
+                    }`}
+                    key={recommendation.occupant.id}
+                  >
+                    <div>
+                      <span>Παρευρισκόμενος</span>
 
-                    <p>
-                      Περιοχή:{' '}
-                      {recommendation.occupantZone?.name ||
-                        recommendation.occupant.area ||
-                        'Εκτός Zone'}
-                    </p>
-                  </div>
+                      <h4>
+                        {getElementName(
+                          recommendation.occupant,
+                          'Χωρίς όνομα'
+                        )}
+                      </h4>
 
-                  <div className="recommended-exit">
-                    <span>Προτεινόμενη έξοδος</span>
+                      <p>
+                        Περιοχή:{' '}
+                        {recommendation.occupantZone?.name ||
+                          recommendation.occupant.area ||
+                          'Εκτός Zone'}
+                      </p>
+                    </div>
 
-                    <strong>
-                      {getElementName(
-                        recommendation.recommendedExit,
-                        'Έξοδος κινδύνου'
-                      )}
-                    </strong>
+                    {shelterInPlace ? (
+                      <div className="shelter-in-place">
+                        <span>
+                          Δεν υπάρχει ασφαλής έξοδος
+                        </span>
 
-                    <small>
-                      Απόσταση από παρευρισκόμενο:{' '}
-                      {recommendation.occupantToExitDistance}
-                    </small>
+                        <strong>
+                          SHELTER IN PLACE
+                        </strong>
 
-                    <small>
-                      Απόσταση από φωτιά:{' '}
-                      {recommendation.fireToExitDistance}
-                    </small>
-                  </div>
-                </article>
-              )
+                        <p>
+                          Παραμείνετε σε προστατευμένο χώρο,
+                          κλείστε τις πόρτες και περιμένετε
+                          οδηγίες από τους υπευθύνους
+                          ασφαλείας.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="recommended-exit">
+                        <span>
+                          Προτεινόμενη έξοδος
+                        </span>
+
+                        <strong>
+                          {getElementName(
+                            recommendation.recommendedExit,
+                            'Έξοδος κινδύνου'
+                          )}
+                        </strong>
+
+                        <small>
+                          Απόσταση από παρευρισκόμενο:{' '}
+                          {
+                            recommendation.occupantToExitDistance
+                          }
+                        </small>
+
+                        <small>
+                          Απόσταση από φωτιά:{' '}
+                          {recommendation.fireToExitDistance}
+                        </small>
+                      </div>
+                    )}
+                  </article>
+                );
+              }
             )}
           </div>
         </>

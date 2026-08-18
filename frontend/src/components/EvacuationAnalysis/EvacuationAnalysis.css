@@ -168,4 +168,80 @@
   .evacuation-recommendation {
     grid-template-columns: 1fr;
   }
+
+  .rejected-exits {
+    margin-bottom: 18px;
+    padding: 16px;
+    border: 1px solid #fed7aa;
+    border-radius: 10px;
+    background: #fff7ed;
+  }
+
+  .rejected-exits > h4 {
+    margin: 0 0 12px;
+    color: #9a3412;
+    font-size: 14px;
+  }
+
+  .rejected-exits-list {
+    display: grid;
+    gap: 10px;
+  }
+
+  .rejected-exits-list article {
+    padding: 12px;
+    border-radius: 8px;
+    background: #ffffff;
+  }
+
+  .rejected-exits-list strong {
+    color: #7c2d12;
+    font-size: 13px;
+  }
+
+  .rejected-exits-list ul {
+    margin: 8px 0 0;
+    padding-left: 18px;
+    color: #9a3412;
+    font-size: 11px;
+    line-height: 1.6;
+  }
+
+  .evacuation-recommendation--shelter {
+    border-color: #fca5a5;
+    background: #fff7f7;
+  }
+
+  .shelter-in-place {
+    padding: 14px;
+    border: 1px solid #fca5a5;
+    border-radius: 8px;
+    background: #fef2f2;
+  }
+
+  .shelter-in-place span,
+  .shelter-in-place strong,
+  .shelter-in-place p {
+    display: block;
+  }
+
+  .shelter-in-place span {
+    color: #991b1b;
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+  }
+
+  .shelter-in-place strong {
+    margin-top: 7px;
+    color: #b91c1c;
+    font-size: 16px;
+  }
+
+  .shelter-in-place p {
+    margin: 8px 0 0;
+    color: #7f1d1d;
+    font-size: 11px;
+    line-height: 1.6;
+  }
 }

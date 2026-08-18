@@ -3,18 +3,14 @@ function clampPercentage(value) {
 }
 
 function createIntermediatePoint(occupant, exit) {
-  const horizontalDistance = Math.abs(exit.x - occupant.x);
-  const verticalDistance = Math.abs(exit.y - occupant.y);
+  const horizontalDistance = Math.abs(
+    exit.x - occupant.x
+  );
 
-  /*
-   * Δημιουργούμε μια απλή ορθογώνια διαδρομή.
-   *
-   * Αν η οριζόντια απόσταση είναι μεγαλύτερη:
-   * πρώτα κινούμαστε οριζόντια και μετά κατακόρυφα.
-   *
-   * Διαφορετικά:
-   * πρώτα κινούμαστε κατακόρυφα και μετά οριζόντια.
-   */
+  const verticalDistance = Math.abs(
+    exit.y - occupant.y
+  );
+
   if (horizontalDistance >= verticalDistance) {
     return {
       x: clampPercentage(exit.x),
@@ -33,35 +29,39 @@ export function generateEvacuationRoutes(analysis) {
     return [];
   }
 
-  return analysis.recommendations.map((recommendation) => {
-    const occupant = recommendation.occupant;
-    const exit = recommendation.recommendedExit;
+  return analysis.recommendations
+    .filter(
+      (recommendation) =>
+        recommendation.action === 'EVACUATE' &&
+        recommendation.recommendedExit
+    )
+    .map((recommendation) => {
+      const occupant = recommendation.occupant;
+      const exit = recommendation.recommendedExit;
 
-    const intermediatePoint = createIntermediatePoint(
-      occupant,
-      exit
-    );
+      const intermediatePoint =
+        createIntermediatePoint(occupant, exit);
 
-    return {
-      id: `route-${occupant.id}-${exit.id}`,
-      occupantId: occupant.id,
-      exitId: exit.id,
-      occupantName:
-        occupant.name?.trim() || 'Παρευρισκόμενος',
-      exitName:
-        exit.name?.trim() || 'Έξοδος κινδύνου',
+      return {
+        id: `route-${occupant.id}-${exit.id}`,
+        occupantId: occupant.id,
+        exitId: exit.id,
+        occupantName:
+          occupant.name?.trim() || 'Παρευρισκόμενος',
+        exitName:
+          exit.name?.trim() || 'Έξοδος κινδύνου',
 
-      points: [
-        {
-          x: occupant.x,
-          y: occupant.y,
-        },
-        intermediatePoint,
-        {
-          x: exit.x,
-          y: exit.y,
-        },
-      ],
-    };
-  });
+        points: [
+          {
+            x: occupant.x,
+            y: occupant.y,
+          },
+          intermediatePoint,
+          {
+            x: exit.x,
+            y: exit.y,
+          },
+        ],
+      };
+    });
 }

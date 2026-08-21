@@ -62,58 +62,165 @@ function findNearestRouteNode(point, routeNodes) {
   );
 }
 
-function createRouteUsingNodes({
+function buildRouteGraph(
+  routeNodes,
+  routeConnections
+) {
+  const graph = new Map();
+
+  routeNodes.forEach((node) => {
+    graph.set(node.id, []);
+  });
+
+  routeConnections
+    .filter(
+      (connection) =>
+        connection.status !== 'BLOCKED'
+    )
+    .forEach((connection) => {
+      if (
+        !graph.has(connection.fromNodeId) ||
+        !graph.has(connection.toNodeId)
+      ) {
+        return;
+      }
+
+      graph
+        .get(connection.fromNodeId)
+        .push(connection.toNodeId);
+
+      graph
+        .get(connection.toNodeId)
+        .push(connection.fromNodeId);
+    });
+
+  return graph;
+}
+
+function findGraphPath({
+  startNodeId,
+  targetNodeId,
+  graph,
+}) {
+  if (!startNodeId || !targetNodeId) {
+    return null;
+  }
+
+  if (startNodeId === targetNodeId) {
+    return [startNodeId];
+  }
+
+  const queue = [startNodeId];
+  const visited = new Set([startNodeId]);
+  const previousNode = new Map();
+
+  while (queue.length > 0) {
+    const currentNodeId = queue.shift();
+
+    const neighbours =
+      graph.get(currentNodeId) || [];
+
+    for (const neighbourId of neighbours) {
+      if (visited.has(neighbourId)) {
+        continue;
+      }
+
+      visited.add(neighbourId);
+
+      previousNode.set(
+        neighbourId,
+        currentNodeId
+      );
+
+      if (neighbourId === targetNodeId) {
+        const path = [targetNodeId];
+
+        let currentPathNode =
+          targetNodeId;
+
+        while (
+          previousNode.has(currentPathNode)
+        ) {
+          currentPathNode =
+            previousNode.get(currentPathNode);
+
+          path.unshift(currentPathNode);
+        }
+
+        return path;
+      }
+
+      queue.push(neighbourId);
+    }
+  }
+
+  return null;
+}
+
+function createRouteUsingGraph({
   occupant,
   exit,
   routeNodes,
+  routeConnections,
 }) {
-  const availableRouteNodes = routeNodes.filter(
-    (node) => node.status !== 'BLOCKED'
-  );
+  const availableRouteNodes =
+    routeNodes.filter(
+      (node) => node.status !== 'BLOCKED'
+    );
 
   if (availableRouteNodes.length === 0) {
     return null;
   }
 
-  const occupantNode = findNearestRouteNode(
-    occupant,
-    availableRouteNodes
-  );
+  const occupantNode =
+    findNearestRouteNode(
+      occupant,
+      availableRouteNodes
+    );
 
-  const exitNode = findNearestRouteNode(
-    exit,
-    availableRouteNodes
-  );
+  const exitNode =
+    findNearestRouteNode(
+      exit,
+      availableRouteNodes
+    );
 
   if (!occupantNode || !exitNode) {
     return null;
   }
 
-  /*
-   * Πρώτη έκδοση Route Node routing.
-   *
-   * Προς το παρόν:
-   * Occupant
-   * → nearest occupant Route Node
-   * → nearest exit Route Node
-   * → Exit
-   *
-   * Στο επόμενο στάδιο θα προσθέσουμε πραγματικές
-   * συνδέσεις μεταξύ των Route Nodes.
-   */
+  const graph = buildRouteGraph(
+    availableRouteNodes,
+    routeConnections
+  );
+
+  const nodePathIds = findGraphPath({
+    startNodeId: occupantNode.id,
+    targetNodeId: exitNode.id,
+    graph,
+  });
+
+  if (!nodePathIds) {
+    return null;
+  }
+
+  const nodePoints = nodePathIds
+    .map((nodeId) =>
+      availableRouteNodes.find(
+        (node) => node.id === nodeId
+      )
+    )
+    .filter(Boolean)
+    .map((node) => ({
+      x: node.x,
+      y: node.y,
+    }));
+
   return [
     {
       x: occupant.x,
       y: occupant.y,
     },
-    {
-      x: occupantNode.x,
-      y: occupantNode.y,
-    },
-    {
-      x: exitNode.x,
-      y: exitNode.y,
-    },
+    ...nodePoints,
     {
       x: exit.x,
       y: exit.y,
@@ -140,7 +247,8 @@ function createFallbackRoute(occupant, exit) {
 
 export function generateEvacuationRoutes(
   analysis,
-  elements = []
+  elements = [],
+  routeConnections = []
 ) {
   if (!analysis?.success) {
     return [];
@@ -158,18 +266,26 @@ export function generateEvacuationRoutes(
         recommendation.recommendedExit
     )
     .map((recommendation) => {
-      const occupant = recommendation.occupant;
-      const exit = recommendation.recommendedExit;
+      const occupant =
+        recommendation.occupant;
 
-      const nodeRoute = createRouteUsingNodes({
-        occupant,
-        exit,
-        routeNodes,
-      });
+      const exit =
+        recommendation.recommendedExit;
+
+      const graphRoute =
+        createRouteUsingGraph({
+          occupant,
+          exit,
+          routeNodes,
+          routeConnections,
+        });
 
       const routePoints =
-        nodeRoute ||
-        createFallbackRoute(occupant, exit);
+        graphRoute ||
+        createFallbackRoute(
+          occupant,
+          exit
+        );
 
       return {
         id: `route-${occupant.id}-${exit.id}`,
@@ -184,8 +300,8 @@ export function generateEvacuationRoutes(
           exit.name?.trim() ||
           'Έξοδος κινδύνου',
 
-        routingMode: nodeRoute
-          ? 'ROUTE_NODES'
+        routingMode: graphRoute
+          ? 'ROUTE_GRAPH'
           : 'FALLBACK',
 
         points: routePoints,

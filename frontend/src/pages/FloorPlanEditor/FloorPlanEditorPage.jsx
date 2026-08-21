@@ -22,6 +22,10 @@ import { generateEvacuationRoutes } from '../../services/evacuationRouteGenerato
 import { generateEmergencyAlert } from '../../services/emergencyAlertGenerator';
 
 import { findContainingZone } from '../../utils/floorZoneUtils';
+import {
+  loadRouteConnections,
+  saveRouteConnections,
+} from '../../services/routeConnectionStorage';
 
 import './FloorPlanEditorPage.css';
 
@@ -57,7 +61,12 @@ function FloorPlanEditorPage() {
     useState(null);
 
   const [routeConnections, setRouteConnections] =
-    useState([]);
+    useState(() =>
+      loadRouteConnections(
+        numericCompanyId,
+        numericFloorId
+      )
+    );
 
   const [pendingRouteNodeId, setPendingRouteNodeId] =
     useState(null);
@@ -95,11 +104,12 @@ function FloorPlanEditorPage() {
   const handleRunEvacuationAnalysis = () => {
     const result = analyzeEvacuation(elements);
 
-    const generatedRoutes =
-      generateEvacuationRoutes(
-        result,
-        elements
-      );
+  const generatedRoutes =
+    generateEvacuationRoutes(
+      result,
+      elements,
+      routeConnections
+    );
 
     const generatedAlert =
       generateEmergencyAlert(result);
@@ -154,6 +164,12 @@ function FloorPlanEditorPage() {
       numericCompanyId,
       numericFloorId,
       elements
+    );
+    
+    saveRouteConnections(
+      numericCompanyId,
+      numericFloorId,
+      routeConnections
     );
 
     setSaveMessage(

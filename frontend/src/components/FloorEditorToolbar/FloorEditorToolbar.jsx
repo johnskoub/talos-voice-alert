@@ -10,6 +10,8 @@ const editorTools = [
   { id: 'EXTINGUISHER', icon: 'E', label: 'Extinguisher' },
   { id: 'FIRE_POINT', icon: '▲', label: 'Fire Point' },
   { id: 'ASSEMBLY_POINT', icon: '◎', label: 'Assembly Point' },
+  { id: 'ROUTE_NODE', label: 'Route Node', icon: '◆', },
+  { id: 'CONNECT_NODES', label: 'Connect Nodes', icon: '─', },
   { id: 'DELETE', icon: '×', label: 'Delete' },
 ];
 

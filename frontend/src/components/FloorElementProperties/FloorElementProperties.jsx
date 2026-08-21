@@ -9,6 +9,7 @@ const elementTypeLabels = {
   ELEVATOR: 'Ανελκυστήρας',
   EXTINGUISHER: 'Πυροσβεστήρας',
   ASSEMBLY_POINT: 'Σημείο συγκέντρωσης',
+  ROUTE_NODE: 'Κόμβος διαδρομής',
 };
 
 function FloorElementProperties({ element, containingZone, onElementChange,}) {
@@ -53,6 +54,40 @@ function FloorElementProperties({ element, containingZone, onElementChange,}) {
         <span>Τύπος</span>
         <strong>{elementTypeLabels[element.type]}</strong>
       </div>
+
+      {element.type === 'ROUTE_NODE' && (
+        <div className="property-form">
+          <label>
+            <span>Όνομα κόμβου</span>
+
+            <input
+              name="name"
+              type="text"
+              placeholder="π.χ. Corridor Node 01"
+              value={element.name ?? ''}
+              onChange={handleInputChange}
+            />
+          </label>
+
+          <label>
+            <span>Κατάσταση</span>
+
+            <select
+              name="status"
+              value={element.status ?? 'AVAILABLE'}
+              onChange={handleInputChange}
+            >
+              <option value="AVAILABLE">
+                Διαθέσιμος
+              </option>
+
+              <option value="BLOCKED">
+                Αποκλεισμένος
+              </option>
+            </select>
+          </label>
+        </div>
+      )}
 
       {element.type !== 'ZONE' && (
         <div className="property-detected-zone">

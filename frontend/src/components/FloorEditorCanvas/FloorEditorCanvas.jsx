@@ -9,6 +9,7 @@ const placeableTools = [
   'ELEVATOR',
   'EXTINGUISHER',
   'ASSEMBLY_POINT',
+  'ROUTE_NODE',
 ];
 
 const elementInformation = {
@@ -43,6 +44,11 @@ const elementInformation = {
     symbol: '◎',
     label: 'Σημείο συγκέντρωσης',
   },
+
+  ROUTE_NODE: {
+    symbol: '◆',
+    label: 'Route Node',
+  },
 };
 
 function createElementId() {
@@ -70,6 +76,9 @@ function FloorEditorCanvas({
   selectedElementId,
   onElementSelect,
   evacuationRoutes,
+  routeConnections,
+  pendingRouteNodeId,
+  onRouteNodeConnect,
 }) {
   const imageRef = useRef(null);
 
@@ -186,6 +195,11 @@ function FloorEditorCanvas({
       ASSEMBLY_POINT: {
         name: '',
         capacity: 50,
+        status: 'AVAILABLE',
+      },
+
+      ROUTE_NODE: {
+        name: '',
         status: 'AVAILABLE',
       },
     };
@@ -734,6 +748,41 @@ const handleZoneResizePointerUp = (event, zoneId) => {
           </div>
 
           <svg
+            className="route-connections-layer"
+            viewBox="0 0 100 100"
+            preserveAspectRatio="none"
+            aria-label="Συνδέσεις κόμβων διαδρομής"
+          >
+            {routeConnections.map((connection) => {
+              const fromNode = elements.find(
+                (element) =>
+                  element.id === connection.fromNodeId
+              );
+
+              const toNode = elements.find(
+                (element) =>
+                  element.id === connection.toNodeId
+              );
+
+              if (!fromNode || !toNode) {
+                return null;
+              }
+
+              return (
+                <line
+                  key={connection.id}
+                  x1={fromNode.x}
+                  y1={fromNode.y}
+                  x2={toNode.x}
+                  y2={toNode.y}
+                  className="route-connection-line"
+                  vectorEffect="non-scaling-stroke"
+                />
+              );
+            })}
+          </svg>
+
+          <svg
             className="evacuation-routes-layer"
             viewBox="0 0 100 100"
             preserveAspectRatio="none"
@@ -849,6 +898,10 @@ const handleZoneResizePointerUp = (event, zoneId) => {
                     isDragging
                       ? 'floor-element-marker--dragging'
                       : ''
+                  } ${
+                    pendingRouteNodeId === element.id
+                      ? 'floor-element-marker--connection-pending'
+                      : ''
                   }`}
                   type="button"
                   style={{
@@ -856,9 +909,18 @@ const handleZoneResizePointerUp = (event, zoneId) => {
                     top: `${element.y}%`,
                   }}
                   title={`${information.label} — x: ${element.x}%, y: ${element.y}%`}
-                  onClick={(event) =>
-                    handleElementClick(event, element.id)
-                  }
+                  onClick={(event) => {
+                    if (
+                      activeTool === 'CONNECT_NODES' &&
+                      element.type === 'ROUTE_NODE'
+                    ) {
+                      event.stopPropagation();
+                      onRouteNodeConnect(element.id);
+                      return;
+                    }
+
+                    handleElementClick(event, element.id);
+                  }}
                   onPointerDown={(event) =>
                     handleMarkerPointerDown(
                       event,

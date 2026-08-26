@@ -101,8 +101,8 @@ function FloorPlanEditorPage() {
     setEmergencyAlert(null);
   };
 
-  const handleRunEvacuationAnalysis = () => {
-    const result = analyzeEvacuation(elements);
+const handleRunEvacuationAnalysis = () => {
+  const result = analyzeEvacuation(elements);
 
   const generatedRoutes =
     generateEvacuationRoutes(
@@ -111,13 +111,52 @@ function FloorPlanEditorPage() {
       routeConnections
     );
 
-    const generatedAlert =
-      generateEmergencyAlert(result);
+  const routedOccupantIds = new Set(
+    generatedRoutes.map(
+      (route) => route.occupantId
+    )
+  );
 
-    setEvacuationAnalysis(result);
-    setEvacuationRoutes(generatedRoutes);
-    setEmergencyAlert(generatedAlert);
+  const updatedRecommendations =
+    result.recommendations.map(
+      (recommendation) => {
+        if (
+          recommendation.action !== 'EVACUATE'
+        ) {
+          return recommendation;
+        }
+
+        const hasSafeGraphRoute =
+          routedOccupantIds.has(
+            recommendation.occupant.id
+          );
+
+        if (hasSafeGraphRoute) {
+          return recommendation;
+        }
+
+        return {
+          ...recommendation,
+          action: 'SHELTER_IN_PLACE',
+          recommendedExit: null,
+          reason: 'NO_SAFE_GRAPH_ROUTE',
+        };
+      }
+    );
+
+  const updatedResult = {
+    ...result,
+    recommendations:
+      updatedRecommendations,
   };
+
+  const generatedAlert =
+    generateEmergencyAlert(updatedResult);
+
+  setEvacuationAnalysis(updatedResult);
+  setEvacuationRoutes(generatedRoutes);
+  setEmergencyAlert(generatedAlert);
+};
 
   const handleToolChange = (toolId) => {
     setActiveTool(toolId);

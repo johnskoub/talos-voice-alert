@@ -15,6 +15,104 @@ function calculateDistance(firstPoint, secondPoint) {
   );
 }
 
+function calculatePointToSegmentDistance(
+  point,
+  segmentStart,
+  segmentEnd
+) {
+  const segmentX =
+    segmentEnd.x - segmentStart.x;
+
+  const segmentY =
+    segmentEnd.y - segmentStart.y;
+
+  const segmentLengthSquared =
+    segmentX ** 2 + segmentY ** 2;
+
+  if (segmentLengthSquared === 0) {
+    return calculateDistance(
+      point,
+      segmentStart
+    );
+  }
+
+  const projection =
+    (
+      (point.x - segmentStart.x) * segmentX +
+      (point.y - segmentStart.y) * segmentY
+    ) / segmentLengthSquared;
+
+  const clampedProjection =
+    Math.max(0, Math.min(1, projection));
+
+  const closestPoint = {
+    x:
+      segmentStart.x +
+      clampedProjection * segmentX,
+    y:
+      segmentStart.y +
+      clampedProjection * segmentY,
+  };
+
+  return calculateDistance(
+    point,
+    closestPoint
+  );
+}
+
+const FIRE_BLOCKING_DISTANCE = 5;
+function isRouteNodeBlockedByFire(
+  routeNode,
+  firePoint
+) {
+  if (!firePoint) {
+    return false;
+  }
+
+  const distanceFromFire =
+    calculateDistance(
+      routeNode,
+      firePoint
+    );
+
+  return (
+    distanceFromFire <
+    FIRE_BLOCKING_DISTANCE
+  );
+}
+
+function isRouteConnectionBlockedByFire({
+  connection,
+  nodeById,
+  firePoint,
+}) {
+  if (!firePoint) {
+    return false;
+  }
+
+  const fromNode =
+    nodeById.get(connection.fromNodeId);
+
+  const toNode =
+    nodeById.get(connection.toNodeId);
+
+  if (!fromNode || !toNode) {
+    return true;
+  }
+
+  const distanceFromFire =
+    calculatePointToSegmentDistance(
+      firePoint,
+      fromNode,
+      toNode
+    );
+
+  return (
+    distanceFromFire <
+    FIRE_BLOCKING_DISTANCE
+  );
+}
+
 function createIntermediatePoint(occupant, exit) {
   const horizontalDistance = Math.abs(
     exit.x - occupant.x
@@ -64,9 +162,17 @@ function findNearestRouteNode(point, routeNodes) {
 
 function buildRouteGraph(
   routeNodes,
-  routeConnections
+  routeConnections,
+  firePoint
 ) {
   const graph = new Map();
+
+  const nodeById = new Map(
+    routeNodes.map((node) => [
+      node.id,
+      node,
+    ])
+  );
 
   routeNodes.forEach((node) => {
     graph.set(node.id, []);
@@ -76,6 +182,14 @@ function buildRouteGraph(
     .filter(
       (connection) =>
         connection.status !== 'BLOCKED'
+    )
+    .filter(
+      (connection) =>
+        !isRouteConnectionBlockedByFire({
+          connection,
+          nodeById,
+          firePoint,
+        })
     )
     .forEach((connection) => {
       if (
@@ -162,10 +276,16 @@ function createRouteUsingGraph({
   exit,
   routeNodes,
   routeConnections,
+  firePoint,
 }) {
   const availableRouteNodes =
     routeNodes.filter(
-      (node) => node.status !== 'BLOCKED'
+      (node) =>
+        node.status !== 'BLOCKED' &&
+        !isRouteNodeBlockedByFire(
+          node,
+          firePoint
+        )
     );
 
   if (availableRouteNodes.length === 0) {
@@ -190,7 +310,8 @@ function createRouteUsingGraph({
 
   const graph = buildRouteGraph(
     availableRouteNodes,
-    routeConnections
+    routeConnections,
+    firePoint
   );
 
   const nodePathIds = findGraphPath({
@@ -259,6 +380,10 @@ export function generateEvacuationRoutes(
       element.type === 'ROUTE_NODE'
   );
 
+  const hasConfiguredRouteGraph =
+  routeNodes.length > 0 &&
+  routeConnections.length > 0;
+
   return analysis.recommendations
     .filter(
       (recommendation) =>
@@ -278,7 +403,15 @@ export function generateEvacuationRoutes(
           exit,
           routeNodes,
           routeConnections,
+          firePoint: analysis.firePoint,
         });
+
+      if (
+        hasConfiguredRouteGraph &&
+        !graphRoute
+      ) {
+        return null;
+      }
 
       const routePoints =
         graphRoute ||
@@ -306,5 +439,6 @@ export function generateEvacuationRoutes(
 
         points: routePoints,
       };
-    });
+    })
+    .filter(Boolean);
 }

@@ -394,27 +394,90 @@ export function generateEvacuationRoutes(
       const occupant =
         recommendation.occupant;
 
+      const candidateExits =
+        recommendation.alternatives?.length > 0
+          ? recommendation.alternatives
+          : recommendation.recommendedExit
+            ? [
+                {
+                  exit:
+                    recommendation.recommendedExit,
+                },
+              ]
+            : [];
+
+      if (candidateExits.length === 0) {
+        return null;
+      }
+
+      /*
+      * Αν υπάρχει Route Graph, δοκιμάζουμε
+      * κάθε ασφαλή έξοδο με σειρά score.
+      *
+      * Η πρώτη έξοδος που έχει πραγματικό
+      * fire-safe graph path επιλέγεται.
+      */
+      if (hasConfiguredRouteGraph) {
+        for (const candidate of candidateExits) {
+          const exit = candidate.exit;
+
+          if (!exit) {
+            continue;
+          }
+
+          const graphRoute =
+            createRouteUsingGraph({
+              occupant,
+              exit,
+              routeNodes,
+              routeConnections,
+              firePoint: analysis.firePoint,
+            });
+
+          if (!graphRoute) {
+            continue;
+          }
+
+          return {
+            id: `route-${occupant.id}-${exit.id}`,
+            occupantId: occupant.id,
+            exitId: exit.id,
+
+            occupantName:
+              occupant.name?.trim() ||
+              'Παρευρισκόμενος',
+
+            exitName:
+              exit.name?.trim() ||
+              'Έξοδος κινδύνου',
+
+            routingMode: 'ROUTE_GRAPH',
+
+            points: graphRoute,
+          };
+        }
+
+        /*
+        * Υπήρχαν ασφαλείς exits σύμφωνα
+        * με την evacuation analysis,
+        * αλλά καμία δεν είναι προσβάσιμη
+        * μέσω του Route Graph.
+        */
+        return null;
+      }
+
+      /*
+      * Fallback επιτρέπεται μόνο σε όροφο
+      * χωρίς διαμορφωμένο Route Graph.
+      */
       const exit =
-        recommendation.recommendedExit;
+        candidateExits[0].exit;
 
-      const graphRoute =
-        createRouteUsingGraph({
-          occupant,
-          exit,
-          routeNodes,
-          routeConnections,
-          firePoint: analysis.firePoint,
-        });
-
-      if (
-        hasConfiguredRouteGraph &&
-        !graphRoute
-      ) {
+      if (!exit) {
         return null;
       }
 
       const routePoints =
-        graphRoute ||
         createFallbackRoute(
           occupant,
           exit
@@ -433,12 +496,10 @@ export function generateEvacuationRoutes(
           exit.name?.trim() ||
           'Έξοδος κινδύνου',
 
-        routingMode: graphRoute
-          ? 'ROUTE_GRAPH'
-          : 'FALLBACK',
+        routingMode: 'FALLBACK',
 
         points: routePoints,
       };
     })
     .filter(Boolean);
-}
+    }

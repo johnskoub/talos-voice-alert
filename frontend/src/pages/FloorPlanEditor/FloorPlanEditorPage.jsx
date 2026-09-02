@@ -111,11 +111,6 @@ const handleRunEvacuationAnalysis = () => {
       routeConnections
     );
 
-  const routedOccupantIds = new Set(
-    generatedRoutes.map(
-      (route) => route.occupantId
-    )
-  );
 
   const updatedRecommendations =
     result.recommendations.map(
@@ -126,20 +121,39 @@ const handleRunEvacuationAnalysis = () => {
           return recommendation;
         }
 
-        const hasSafeGraphRoute =
-          routedOccupantIds.has(
-            recommendation.occupant.id
+        const generatedRoute =
+          generatedRoutes.find(
+            (route) =>
+              route.occupantId ===
+              recommendation.occupant.id
           );
 
-        if (hasSafeGraphRoute) {
-          return recommendation;
+        if (!generatedRoute) {
+          return {
+            ...recommendation,
+            action: 'SHELTER_IN_PLACE',
+            recommendedExit: null,
+            reason: 'NO_SAFE_GRAPH_ROUTE',
+          };
         }
+
+        const routedExit =
+          elements.find(
+            (element) =>
+              element.id ===
+              generatedRoute.exitId
+          );
 
         return {
           ...recommendation,
-          action: 'SHELTER_IN_PLACE',
-          recommendedExit: null,
-          reason: 'NO_SAFE_GRAPH_ROUTE',
+          recommendedExit:
+            routedExit ||
+            recommendation.recommendedExit,
+          reason:
+            routedExit?.id !==
+            recommendation.recommendedExit?.id
+              ? 'ALTERNATIVE_SAFE_EXIT'
+              : null,
         };
       }
     );

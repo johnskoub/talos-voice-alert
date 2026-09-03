@@ -192,6 +192,16 @@ function buildRouteGraph(
         })
     )
     .forEach((connection) => {
+      const fromNode =
+        nodeById.get(connection.fromNodeId);
+
+      const toNode =
+        nodeById.get(connection.toNodeId);
+
+      if (!fromNode || !toNode) {
+        return;
+      }
+
       if (
         !graph.has(connection.fromNodeId) ||
         !graph.has(connection.toNodeId)
@@ -199,13 +209,25 @@ function buildRouteGraph(
         return;
       }
 
+      const distance =
+        calculateDistance(
+          fromNode,
+          toNode
+        );
+
       graph
         .get(connection.fromNodeId)
-        .push(connection.toNodeId);
+        .push({
+          nodeId: connection.toNodeId,
+          weight: distance,
+        });
 
       graph
         .get(connection.toNodeId)
-        .push(connection.fromNodeId);
+        .push({
+          nodeId: connection.fromNodeId,
+          weight: distance,
+        });
     });
 
   return graph;
@@ -221,54 +243,119 @@ function findGraphPath({
   }
 
   if (startNodeId === targetNodeId) {
-    return [startNodeId];
+    return {
+      nodeIds: [startNodeId],
+      totalDistance: 0,
+    };
   }
 
-  const queue = [startNodeId];
-  const visited = new Set([startNodeId]);
+  const distances = new Map();
   const previousNode = new Map();
+  const unvisited = new Set(
+    graph.keys()
+  );
 
-  while (queue.length > 0) {
-    const currentNodeId = queue.shift();
+  graph.forEach((_, nodeId) => {
+    distances.set(
+      nodeId,
+      Number.POSITIVE_INFINITY
+    );
+  });
+
+  distances.set(startNodeId, 0);
+
+  while (unvisited.size > 0) {
+    let currentNodeId = null;
+    let currentDistance =
+      Number.POSITIVE_INFINITY;
+
+    for (const nodeId of unvisited) {
+      const nodeDistance =
+        distances.get(nodeId);
+
+      if (nodeDistance < currentDistance) {
+        currentDistance = nodeDistance;
+        currentNodeId = nodeId;
+      }
+    }
+
+    if (
+      currentNodeId === null ||
+      currentDistance ===
+        Number.POSITIVE_INFINITY
+    ) {
+      break;
+    }
+
+    if (currentNodeId === targetNodeId) {
+      break;
+    }
+
+    unvisited.delete(currentNodeId);
 
     const neighbours =
       graph.get(currentNodeId) || [];
 
-    for (const neighbourId of neighbours) {
-      if (visited.has(neighbourId)) {
+    for (const neighbour of neighbours) {
+      if (!unvisited.has(neighbour.nodeId)) {
         continue;
       }
 
-      visited.add(neighbourId);
+      const alternativeDistance =
+        currentDistance +
+        neighbour.weight;
 
-      previousNode.set(
-        neighbourId,
-        currentNodeId
-      );
+      if (
+        alternativeDistance <
+        distances.get(neighbour.nodeId)
+      ) {
+        distances.set(
+          neighbour.nodeId,
+          alternativeDistance
+        );
 
-      if (neighbourId === targetNodeId) {
-        const path = [targetNodeId];
-
-        let currentPathNode =
-          targetNodeId;
-
-        while (
-          previousNode.has(currentPathNode)
-        ) {
-          currentPathNode =
-            previousNode.get(currentPathNode);
-
-          path.unshift(currentPathNode);
-        }
-
-        return path;
+        previousNode.set(
+          neighbour.nodeId,
+          currentNodeId
+        );
       }
-
-      queue.push(neighbourId);
     }
   }
 
-  return null;
+  const targetDistance =
+    distances.get(targetNodeId);
+
+  if (
+    targetDistance ===
+    Number.POSITIVE_INFINITY
+  ) {
+    return null;
+  }
+
+  const path = [targetNodeId];
+
+  let currentPathNode =
+    targetNodeId;
+
+  while (
+    previousNode.has(currentPathNode)
+  ) {
+    currentPathNode =
+      previousNode.get(currentPathNode);
+
+    path.unshift(currentPathNode);
+  }
+
+  if (path[0] !== startNodeId) {
+    return null;
+  }
+
+  return {
+    nodeIds: path,
+    totalDistance: Number(
+      targetDistance.toFixed(2)
+    ),
+  };
 }
 
 function createRouteUsingGraph({
@@ -314,17 +401,17 @@ function createRouteUsingGraph({
     firePoint
   );
 
-  const nodePathIds = findGraphPath({
+  const graphPath = findGraphPath({
     startNodeId: occupantNode.id,
     targetNodeId: exitNode.id,
     graph,
   });
 
-  if (!nodePathIds) {
+  if (!graphPath) {
     return null;
   }
 
-  const nodePoints = nodePathIds
+  const nodePoints = graphPath.nodeIds
     .map((nodeId) =>
       availableRouteNodes.find(
         (node) => node.id === nodeId
@@ -336,17 +423,40 @@ function createRouteUsingGraph({
       y: node.y,
     }));
 
-  return [
-    {
-      x: occupant.x,
-      y: occupant.y,
-    },
-    ...nodePoints,
-    {
-      x: exit.x,
-      y: exit.y,
-    },
-  ];
+  const occupantToStartNodeDistance =
+    calculateDistance(
+      occupant,
+      occupantNode
+    );
+
+  const exitNodeToExitDistance =
+    calculateDistance(
+      exitNode,
+      exit
+    );
+
+  const totalDistance =
+    occupantToStartNodeDistance +
+    graphPath.totalDistance +
+    exitNodeToExitDistance;
+
+  return {
+    points: [
+      {
+        x: occupant.x,
+        y: occupant.y,
+      },
+      ...nodePoints,
+      {
+        x: exit.x,
+        y: exit.y,
+      },
+    ],
+
+    totalDistance: Number(
+      totalDistance.toFixed(2)
+    ),
+  };
 }
 
 function createFallbackRoute(occupant, exit) {
@@ -418,6 +528,8 @@ export function generateEvacuationRoutes(
       * fire-safe graph path επιλέγεται.
       */
       if (hasConfiguredRouteGraph) {
+        const graphCandidates = [];
+
         for (const candidate of candidateExits) {
           const exit = candidate.exit;
 
@@ -438,32 +550,61 @@ export function generateEvacuationRoutes(
             continue;
           }
 
-          return {
-            id: `route-${occupant.id}-${exit.id}`,
-            occupantId: occupant.id,
-            exitId: exit.id,
+          graphCandidates.push({
+            exit,
+            route: graphRoute,
+          });
+        }
 
-            occupantName:
+        console.table(
+          graphCandidates.map((candidate) => ({
+            occupant:
               occupant.name?.trim() ||
               'Παρευρισκόμενος',
 
-            exitName:
-              exit.name?.trim() ||
+            exit:
+              candidate.exit.name?.trim() ||
               'Έξοδος κινδύνου',
 
-            routingMode: 'ROUTE_GRAPH',
+            totalDistance:
+              candidate.route.totalDistance,
+          }))
+        );
 
-            points: graphRoute,
-          };
+        if (graphCandidates.length === 0) {
+          return null;
         }
 
-        /*
-        * Υπήρχαν ασφαλείς exits σύμφωνα
-        * με την evacuation analysis,
-        * αλλά καμία δεν είναι προσβάσιμη
-        * μέσω του Route Graph.
-        */
-        return null;
+        graphCandidates.sort(
+          (firstCandidate, secondCandidate) =>
+            firstCandidate.route.totalDistance -
+            secondCandidate.route.totalDistance
+        );
+
+        const bestCandidate =
+          graphCandidates[0];
+
+        return {
+          id: `route-${occupant.id}-${bestCandidate.exit.id}`,
+          occupantId: occupant.id,
+          exitId: bestCandidate.exit.id,
+
+          occupantName:
+            occupant.name?.trim() ||
+            'Παρευρισκόμενος',
+
+          exitName:
+            bestCandidate.exit.name?.trim() ||
+            'Έξοδος κινδύνου',
+
+          routingMode: 'ROUTE_GRAPH',
+
+          totalDistance:
+            bestCandidate.route.totalDistance,
+
+          points:
+            bestCandidate.route.points,
+        };
       }
 
       /*

@@ -556,21 +556,6 @@ export function generateEvacuationRoutes(
           });
         }
 
-        console.table(
-          graphCandidates.map((candidate) => ({
-            occupant:
-              occupant.name?.trim() ||
-              'Παρευρισκόμενος',
-
-            exit:
-              candidate.exit.name?.trim() ||
-              'Έξοδος κινδύνου',
-
-            totalDistance:
-              candidate.route.totalDistance,
-          }))
-        );
-
         if (graphCandidates.length === 0) {
           return null;
         }

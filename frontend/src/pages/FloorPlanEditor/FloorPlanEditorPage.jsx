@@ -149,6 +149,10 @@ const handleRunEvacuationAnalysis = () => {
           recommendedExit:
             routedExit ||
             recommendation.recommendedExit,
+
+          routeDistance:
+            generatedRoute.totalDistance,
+            
           reason:
             routedExit?.id !==
             recommendation.recommendedExit?.id

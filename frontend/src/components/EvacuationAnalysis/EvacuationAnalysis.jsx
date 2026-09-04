@@ -189,6 +189,15 @@ function EvacuationAnalysis({
                           Απόσταση από φωτιά:{' '}
                           {recommendation.fireToExitDistance}
                         </small>
+
+                        {recommendation.routeDistance != null && (
+                          <p>
+                            Συνολικό μήκος διαδρομής:{' '}
+                            <strong>
+                              {recommendation.routeDistance}
+                            </strong>
+                          </p>
+                        )}
                       </div>
                     )}
                   </article>

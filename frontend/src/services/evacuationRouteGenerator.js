@@ -60,7 +60,12 @@ function calculatePointToSegmentDistance(
   );
 }
 
-const FIRE_BLOCKING_DISTANCE = 5;
+const FIRE_NODE_BLOCKING_DISTANCE = 5;
+
+const FIRE_CONNECTION_BLOCKING_DISTANCE = 7;
+
+const FIRE_EXIT_APPROACH_DISTANCE = 9;
+
 function isRouteNodeBlockedByFire(
   routeNode,
   firePoint
@@ -77,7 +82,7 @@ function isRouteNodeBlockedByFire(
 
   return (
     distanceFromFire <
-    FIRE_BLOCKING_DISTANCE
+    FIRE_NODE_BLOCKING_DISTANCE
   );
 }
 
@@ -109,8 +114,74 @@ function isRouteConnectionBlockedByFire({
 
   return (
     distanceFromFire <
-    FIRE_BLOCKING_DISTANCE
+    FIRE_CONNECTION_BLOCKING_DISTANCE
   );
+}
+
+export function getFireBlockedRouteElements(
+  elements = [],
+  routeConnections = [],
+  firePoint = null
+) {
+  if (!firePoint) {
+    return {
+      blockedNodeIds: [],
+      blockedConnectionIds: [],
+    };
+  }
+
+  const routeNodes = elements.filter(
+    (element) => element.type === 'ROUTE_NODE'
+  );
+
+  const blockedNodeIds = routeNodes
+    .filter((node) =>
+      isRouteNodeBlockedByFire(
+        node,
+        firePoint
+      )
+    )
+    .map((node) => node.id);
+
+  const blockedNodeIdSet =
+    new Set(blockedNodeIds);
+
+  const nodeById = new Map(
+    routeNodes.map((node) => [
+      node.id,
+      node,
+    ])
+  );
+
+  const blockedConnectionIds =
+    routeConnections
+      .filter((connection) => {
+        const touchesBlockedNode =
+          blockedNodeIdSet.has(
+            connection.fromNodeId
+          ) ||
+          blockedNodeIdSet.has(
+            connection.toNodeId
+          );
+
+        const blockedByFire =
+          isRouteConnectionBlockedByFire({
+            connection,
+            nodeById,
+            firePoint,
+          });
+
+        return (
+          touchesBlockedNode ||
+          blockedByFire
+        );
+      })
+      .map((connection) => connection.id);
+
+  return {
+    blockedNodeIds,
+    blockedConnectionIds,
+  };
 }
 
 function createIntermediatePoint(occupant, exit) {
@@ -395,6 +466,28 @@ function createRouteUsingGraph({
     return null;
   }
 
+  const occupantConnectionBlockedByFire =
+    calculatePointToSegmentDistance(
+      firePoint,
+      occupant,
+      occupantNode
+    ) < FIRE_NODE_BLOCKING_DISTANCE;
+
+  if (occupantConnectionBlockedByFire) {
+    return null;
+  }
+
+  const exitConnectionBlockedByFire =
+    calculatePointToSegmentDistance(
+      firePoint,
+      exitNode,
+      exit
+    ) < FIRE_EXIT_APPROACH_DISTANCE;
+
+  if (exitConnectionBlockedByFire) {
+    return null;
+  }
+
   const graph = buildRouteGraph(
     availableRouteNodes,
     routeConnections,
@@ -530,6 +623,11 @@ export function generateEvacuationRoutes(
       if (hasConfiguredRouteGraph) {
         const graphCandidates = [];
 
+        const rejectedRouteExits = [];
+
+        const originalExit =
+          candidateExits[0]?.exit ?? null;
+
         for (const candidate of candidateExits) {
           const exit = candidate.exit;
 
@@ -547,6 +645,16 @@ export function generateEvacuationRoutes(
             });
 
           if (!graphRoute) {
+            rejectedRouteExits.push({
+              exitId: exit.id,
+
+              exitName:
+                exit.name?.trim() ||
+                'Έξοδος κινδύνου',
+
+              reason: 'NO_SAFE_GRAPH_PATH',
+            });
+
             continue;
           }
 
@@ -586,6 +694,21 @@ export function generateEvacuationRoutes(
 
           totalDistance:
             bestCandidate.route.totalDistance,
+
+          originalExitId:
+            originalExit?.id ?? null,
+
+          originalExitName:
+            originalExit?.name?.trim() ||
+            null,
+
+          usedAlternativeExit:
+            Boolean(
+              originalExit &&
+              bestCandidate.exit.id !== originalExit.id
+            ),
+
+          rejectedRouteExits,
 
           points:
             bestCandidate.route.points,

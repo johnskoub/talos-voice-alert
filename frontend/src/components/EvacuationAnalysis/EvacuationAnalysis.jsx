@@ -198,6 +198,48 @@ function EvacuationAnalysis({
                             </strong>
                           </p>
                         )}
+
+                        {recommendation.reason === 'ALTERNATIVE_SAFE_EXIT' && (
+                          <p className="evacuation-analysis-alternative-note">
+                            Επιλέχθηκε εναλλακτική ασφαλής έξοδος λόγω περιορισμών
+                            της διαδρομής.
+                            {recommendation.originalRecommendedExit?.name && (
+                              <>
+                                {' '}
+                                Αρχική επιλογή:{' '}
+                                <strong>
+                                  {recommendation.originalRecommendedExit.name}
+                                </strong>.
+                              </>
+                            )}
+                          </p>
+                        )}
+
+                        {recommendation.routeDistance != null && (
+                          <p className="evacuation-analysis-routing-mode">
+                            Routing: Weighted Graph
+                          </p>
+                        )}
+
+                        {recommendation.rejectedRouteExits?.length > 0 && (
+                          <div className="evacuation-analysis-route-rejections">
+                            <p>
+                              <strong>
+                                Έξοδοι που δεν χρησιμοποιήθηκαν:
+                              </strong>
+                            </p>
+
+                            {recommendation.rejectedRouteExits.map(
+                              (rejectedExit) => (
+                                <p key={rejectedExit.exitId}>
+                                  {rejectedExit.exitName}:{' '}
+                                  δεν υπάρχει ασφαλής διαδρομή μέσω
+                                  του Route Graph.
+                                </p>
+                              )
+                            )}
+                          </div>
+                        )}
                       </div>
                     )}
                   </article>

@@ -244,4 +244,23 @@
     font-size: 11px;
     line-height: 1.6;
   }
+
+  .evacuation-analysis-alternative-note {
+    margin-top: 8px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .evacuation-analysis-routing-mode {
+    margin-top: 4px;
+    font-size: 11px;
+    opacity: 0.75;
+  }
+  .evacuation-analysis-route-rejections {
+    margin-top: 10px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(15, 23, 42, 0.12);
+    font-size: 11px;
+    line-height: 1.5;
+  }
 }

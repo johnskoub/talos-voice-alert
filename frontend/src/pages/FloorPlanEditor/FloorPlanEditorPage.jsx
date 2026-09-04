@@ -18,8 +18,10 @@ import {
 
 import { loadFloorPlanFromSession } from '../../services/floorPlanStorage';
 import { analyzeEvacuation } from '../../services/evacuationAnalysis';
-import { generateEvacuationRoutes } from '../../services/evacuationRouteGenerator';
-import { generateEmergencyAlert } from '../../services/emergencyAlertGenerator';
+import {
+  generateEvacuationRoutes,
+  getFireBlockedRouteElements,
+} from '../../services/evacuationRouteGenerator';import { generateEmergencyAlert } from '../../services/emergencyAlertGenerator';
 
 import { findContainingZone } from '../../utils/floorZoneUtils';
 import {
@@ -56,6 +58,14 @@ function FloorPlanEditorPage() {
 
   const [evacuationRoutes, setEvacuationRoutes] =
     useState([]);
+
+  const [
+    fireBlockedRouteElements,
+    setFireBlockedRouteElements,
+  ] = useState({
+    blockedNodeIds: [],
+    blockedConnectionIds: [],
+  });
 
   const [emergencyAlert, setEmergencyAlert] =
     useState(null);
@@ -104,6 +114,13 @@ function FloorPlanEditorPage() {
 const handleRunEvacuationAnalysis = () => {
   const result = analyzeEvacuation(elements);
 
+  const blockedRouteElements =
+  getFireBlockedRouteElements(
+    elements,
+    routeConnections,
+    result.firePoint
+  );
+
   const generatedRoutes =
     generateEvacuationRoutes(
       result,
@@ -144,18 +161,42 @@ const handleRunEvacuationAnalysis = () => {
               generatedRoute.exitId
           );
 
+        const originalRecommendedExit =
+          recommendation.recommendedExit;
+
+        const selectedExit =
+          routedExit || originalRecommendedExit;
+
+        const usedAlternativeExit =
+          Boolean(
+            selectedExit &&
+            originalRecommendedExit &&
+            selectedExit.id !== originalRecommendedExit.id
+          );
+
         return {
           ...recommendation,
+
           recommendedExit:
             routedExit ||
             recommendation.recommendedExit,
 
           routeDistance:
             generatedRoute.totalDistance,
-            
+
+          rejectedRouteExits:
+            generatedRoute.rejectedRouteExits || [],
+
+          originalRecommendedExit:
+            generatedRoute.originalExitId
+              ? {
+                  id: generatedRoute.originalExitId,
+                  name: generatedRoute.originalExitName,
+                }
+              : null,
+
           reason:
-            routedExit?.id !==
-            recommendation.recommendedExit?.id
+            generatedRoute.usedAlternativeExit
               ? 'ALTERNATIVE_SAFE_EXIT'
               : null,
         };
@@ -174,6 +215,7 @@ const handleRunEvacuationAnalysis = () => {
   setEvacuationAnalysis(updatedResult);
   setEvacuationRoutes(generatedRoutes);
   setEmergencyAlert(generatedAlert);
+  setFireBlockedRouteElements(blockedRouteElements);
 };
 
   const handleToolChange = (toolId) => {
@@ -203,6 +245,11 @@ const handleRunEvacuationAnalysis = () => {
       )
     );
 
+    setFireBlockedRouteElements({
+      blockedNodeIds: [],
+      blockedConnectionIds: [],
+    });
+
     clearEvacuationResults();
   };
 
@@ -213,6 +260,11 @@ const handleRunEvacuationAnalysis = () => {
      * Οποιαδήποτε αλλαγή στη γεωμετρία ή στα Floor Elements
      * καθιστά την προηγούμενη evacuation analysis παλιά.
      */
+
+    setFireBlockedRouteElements({
+      blockedNodeIds: [],
+      blockedConnectionIds: [],
+    });
     clearEvacuationResults();
   };
 
@@ -373,6 +425,7 @@ const handleRunEvacuationAnalysis = () => {
           routeConnections={routeConnections}
           pendingRouteNodeId={pendingRouteNodeId}
           onRouteNodeConnect={handleRouteNodeConnect}
+          fireBlockedRouteElements={fireBlockedRouteElements}
         />
 
         <FloorElementProperties

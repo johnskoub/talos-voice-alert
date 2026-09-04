@@ -79,6 +79,10 @@ function FloorEditorCanvas({
   routeConnections,
   pendingRouteNodeId,
   onRouteNodeConnect,
+  fireBlockedRouteElements = {
+    blockedNodeIds: [],
+    blockedConnectionIds: [],
+  },
 }) {
   const imageRef = useRef(null);
 
@@ -90,6 +94,14 @@ function FloorEditorCanvas({
 
   const selectedElement = elements.find(
     (element) => element.id === selectedElementId
+  );
+
+  const blockedNodeIdSet = new Set(
+    fireBlockedRouteElements.blockedNodeIds
+  );
+
+  const blockedConnectionIdSet = new Set(
+    fireBlockedRouteElements.blockedConnectionIds
   );
 
   const calculatePointerPosition = (event) => {
@@ -764,6 +776,11 @@ const handleZoneResizePointerUp = (event, zoneId) => {
                   element.id === connection.toNodeId
               );
 
+              const isBlockedByFire =
+                blockedConnectionIdSet.has(
+                  connection.id
+                );
+
               if (!fromNode || !toNode) {
                 return null;
               }
@@ -775,7 +792,11 @@ const handleZoneResizePointerUp = (event, zoneId) => {
                   y1={fromNode.y}
                   x2={toNode.x}
                   y2={toNode.y}
-                  className="route-connection-line"
+                  className={`route-connection-line ${
+                    isBlockedByFire
+                      ? 'route-connection--fire-blocked'
+                      : ''
+                  }`}                  
                   vectorEffect="non-scaling-stroke"
                 />
               );
@@ -897,6 +918,11 @@ const handleZoneResizePointerUp = (event, zoneId) => {
                   } ${
                     isDragging
                       ? 'floor-element-marker--dragging'
+                      : ''
+                  } ${
+                    element.type === 'ROUTE_NODE' &&
+                    blockedNodeIdSet.has(element.id)
+                      ? 'floor-element-marker--fire-blocked'
                       : ''
                   } ${
                     pendingRouteNodeId === element.id

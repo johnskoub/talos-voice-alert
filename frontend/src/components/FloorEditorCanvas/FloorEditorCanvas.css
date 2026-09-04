@@ -418,3 +418,22 @@
   stroke-dasharray: 5 4;
   opacity: 0.75;
 }
+.floor-element-marker--fire-blocked {
+  background: #dc2626;
+  border-color: #991b1b;
+  box-shadow:
+    0 0 0 4px rgba(220, 38, 38, 0.18),
+    0 4px 10px rgba(15, 23, 42, 0.18);
+}
+
+.floor-element-marker--fire-blocked
+.floor-element-marker-label {
+  background: #991b1b;
+  color: #ffffff;
+}
+
+.route-connection--fire-blocked {
+  stroke: #dc2626;
+  stroke-width: 3;
+  stroke-dasharray: 7 5;
+}

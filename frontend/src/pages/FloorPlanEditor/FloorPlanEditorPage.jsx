@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
 
 import PageContainer from '../../components/PageContainer/PageContainer';
@@ -29,6 +29,14 @@ import {
   saveRouteConnections,
 } from '../../services/routeConnectionStorage';
 
+import { 
+  getFloorElements,
+  getRouteConnections,
+  updateFloorElement,
+  createRouteConnection,
+  createFloorElement,
+ } from '../../services/api';
+
 import './FloorPlanEditorPage.css';
 
 function FloorPlanEditorPage() {
@@ -43,12 +51,10 @@ function FloorPlanEditorPage() {
   const [selectedElementId, setSelectedElementId] =
     useState(null);
 
-  const [elements, setElements] = useState(() =>
-    loadFloorElements(
-      numericCompanyId,
-      numericFloorId
-    )
-  );
+  const [elements, setElements] = useState([]);
+
+  const [elementsLoading, setElementsLoading] = useState(true);
+  const [elementsLoadError, setElementsLoadError] = useState('');
 
   const [saveMessage, setSaveMessage] =
     useState('');
@@ -70,16 +76,55 @@ function FloorPlanEditorPage() {
   const [emergencyAlert, setEmergencyAlert] =
     useState(null);
 
-  const [routeConnections, setRouteConnections] =
-    useState(() =>
-      loadRouteConnections(
-        numericCompanyId,
-        numericFloorId
-      )
-    );
+  const [routeConnections, setRouteConnections] = useState([]);
 
   const [pendingRouteNodeId, setPendingRouteNodeId] =
     useState(null);
+
+  useEffect(() => {
+    const loadBackendData = async () => {
+      try {
+        const [backendElements, backendConnections] =
+          await Promise.all([
+            getFloorElements(numericFloorId),
+            getRouteConnections(numericFloorId),
+          ]);
+
+        setElements(
+          Array.isArray(backendElements)
+            ? backendElements
+            : []
+        );
+
+        setRouteConnections(
+          Array.isArray(backendConnections)
+            ? backendConnections
+            : []
+        );
+
+        console.log(
+          'TALOS backend elements:',
+          backendElements
+        );
+
+        console.log(
+          'TALOS backend route connections:',
+          backendConnections
+        );
+      } catch (error) {
+        console.error(
+          'Failed to load floor data from backend:',
+          error
+        );
+
+        setSaveMessage(
+          'Σφάλμα φόρτωσης των δεδομένων από το backend.'
+        );
+      }
+    };
+
+    loadBackendData();
+  }, [numericFloorId]);
 
   const company = companyMockData.find(
     (item) => item.id === numericCompanyId
@@ -112,7 +157,10 @@ function FloorPlanEditorPage() {
   };
 
 const handleRunEvacuationAnalysis = () => {
-  const result = analyzeEvacuation(elements);
+  const result = analyzeEvacuation(
+    elements,
+    routeConnections
+  );
 
   const blockedRouteElements =
   getFireBlockedRouteElements(
@@ -196,7 +244,7 @@ const handleRunEvacuationAnalysis = () => {
               : null,
 
           reason:
-            generatedRoute.usedAlternativeExit
+            usedAlternativeExit
               ? 'ALTERNATIVE_SAFE_EXIT'
               : null,
         };
@@ -268,26 +316,195 @@ const handleRunEvacuationAnalysis = () => {
     clearEvacuationResults();
   };
 
-  const handleSaveChanges = () => {
-    saveFloorElements(
-      numericCompanyId,
-      numericFloorId,
-      elements
-    );
-    
-    saveRouteConnections(
-      numericCompanyId,
-      numericFloorId,
-      routeConnections
-    );
+  const handleSaveChanges = async () => {
+    try {
+      setSaveMessage('Αποθήκευση αλλαγών...');
 
-    setSaveMessage(
-      `Αποθηκεύτηκαν ${elements.length} Floor Elements.`
-    );
+      // ==========================================
+      // 1. SAVE FLOOR ELEMENTS
+      // ==========================================
 
-    window.setTimeout(() => {
-      setSaveMessage('');
-    }, 2500);
+      const savedElements = [];
+      const temporaryIdMap = new Map();
+
+      for (const element of elements) {
+        const numericId = Number(element.id);
+
+        const isExistingBackendElement =
+          element.id !== null &&
+          element.id !== undefined &&
+          element.id !== '' &&
+          Number.isFinite(numericId);
+
+        if (isExistingBackendElement) {
+          // Existing element -> UPDATE
+          const updatedElement =
+            await updateFloorElement(
+              numericId,
+              element
+            );
+
+          savedElements.push(
+            updatedElement || {
+              ...element,
+              id: numericId,
+            }
+          );
+        } else {
+          // New element -> CREATE
+          const createdElement =
+            await createFloorElement(
+              numericFloorId,
+              element
+            );
+
+          if (!createdElement?.id) {
+            throw new Error(
+              `Το backend δεν επέστρεψε ID για το νέο element: ${element.type}`
+            );
+          }
+
+          // Keep mapping:
+          // temporary UUID -> database ID
+          temporaryIdMap.set(
+            element.id,
+            createdElement.id
+          );
+
+          savedElements.push(createdElement);
+        }
+      }
+
+      // ==========================================
+      // 2. REPLACE TEMPORARY IDS WITH DB IDS
+      // ==========================================
+
+      const normalizedElements =
+        savedElements.map((element) => ({
+          ...element,
+          id: Number(element.id),
+        }));
+
+      // ==========================================
+      // 3. FIX ROUTE CONNECTION IDS
+      // ==========================================
+
+      const normalizedConnections =
+        routeConnections.map((connection) => ({
+          ...connection,
+
+          fromNodeId:
+            temporaryIdMap.get(
+              connection.fromNodeId
+            ) ?? Number(connection.fromNodeId),
+
+          toNodeId:
+            temporaryIdMap.get(
+              connection.toNodeId
+            ) ?? Number(connection.toNodeId),
+        }));
+
+      // ==========================================
+      // 4. SAVE ROUTE CONNECTIONS
+      // ==========================================
+
+      const savedConnections = [];
+
+      for (const connection of normalizedConnections) {
+        const numericConnectionId =
+          Number(connection.id);
+
+        const isExistingBackendConnection =
+          connection.id !== null &&
+          connection.id !== undefined &&
+          connection.id !== '' &&
+          Number.isFinite(numericConnectionId);
+
+        if (isExistingBackendConnection) {
+          // Existing connection.
+          // At this stage we keep it because the backend
+          // already owns it.
+          savedConnections.push({
+            ...connection,
+            id: numericConnectionId,
+          });
+
+          continue;
+        }
+
+        // New connection -> CREATE
+        const createdConnection =
+          await createRouteConnection(
+            numericFloorId,
+            {
+              fromNodeId:
+                Number(connection.fromNodeId),
+
+              toNodeId:
+                Number(connection.toNodeId),
+
+              status:
+                connection.status || 'AVAILABLE',
+            }
+          );
+
+        if (!createdConnection?.id) {
+          throw new Error(
+            'Το backend δεν επέστρεψε ID για το Route Connection.'
+          );
+        }
+
+        savedConnections.push(createdConnection);
+      }
+
+      // ==========================================
+      // 5. UPDATE REACT STATE WITH BACKEND DATA
+      // ==========================================
+
+      setElements(normalizedElements);
+
+      setRouteConnections(savedConnections);
+
+      // ==========================================
+      // 6. KEEP LOCAL STORAGE ONLY AS BACKUP
+      // ==========================================
+
+      saveFloorElements(
+        numericCompanyId,
+        numericFloorId,
+        normalizedElements
+      );
+
+      saveRouteConnections(
+        numericCompanyId,
+        numericFloorId,
+        savedConnections
+      );
+
+      // ==========================================
+      // 7. SUCCESS
+      // ==========================================
+
+      setSaveMessage(
+        `Αποθηκεύτηκαν ${normalizedElements.length} Floor Elements και ${savedConnections.length} Route Connections.`
+      );
+
+      window.setTimeout(() => {
+        setSaveMessage('');
+      }, 3000);
+
+    } catch (error) {
+      console.error(
+        'Failed to save floor editor data:',
+        error
+      );
+
+      setSaveMessage(
+        `Σφάλμα κατά την αποθήκευση: ${
+          error.message || 'Άγνωστο σφάλμα'
+        }`
+      );
+    }
   };
 
   const handleRouteNodeConnect = (nodeId) => {
@@ -304,12 +521,10 @@ const handleRunEvacuationAnalysis = () => {
     const connectionAlreadyExists =
       routeConnections.some(
         (connection) =>
-          (connection.fromNodeId ===
-            pendingRouteNodeId &&
+          (connection.fromNodeId === pendingRouteNodeId &&
             connection.toNodeId === nodeId) ||
           (connection.fromNodeId === nodeId &&
-            connection.toNodeId ===
-              pendingRouteNodeId)
+            connection.toNodeId === pendingRouteNodeId)
       );
 
     if (!connectionAlreadyExists) {

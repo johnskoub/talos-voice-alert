@@ -33,7 +33,32 @@ public class RouteConnectionService {
             RouteConnection routeConnection
     ) {
         routeConnection.setFloorId(floorId);
-        return routeConnectionRepository.save(routeConnection);
+
+        RouteConnection existingConnection =
+                routeConnectionRepository
+                        .findByFloorIdAndFromNodeIdAndToNodeId(
+                                floorId,
+                                routeConnection.getFromNodeId(),
+                                routeConnection.getToNodeId()
+                        )
+                        .orElse(null);
+
+        if (existingConnection != null) {
+            existingConnection.setStatus(
+                    routeConnection.getStatus()
+            );
+            existingConnection.setActive(true);
+
+            return routeConnectionRepository.save(
+                    existingConnection
+            );
+        }
+
+        routeConnection.setActive(true);
+
+        return routeConnectionRepository.save(
+                routeConnection
+        );
     }
 
     public RouteConnection updateConnection(

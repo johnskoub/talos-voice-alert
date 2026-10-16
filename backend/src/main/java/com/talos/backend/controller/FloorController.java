@@ -44,6 +44,18 @@ public class FloorController {
         return floorService.updateFloor(id, floor);
     }
 
+    @PutMapping("/floors/{id}/calibration")
+    public Floor updateCalibration(
+            @PathVariable Long id,
+            @RequestBody Floor calibration
+    ) {
+        return floorService.updateCalibration(
+                id,
+                calibration.getScaleRatio(),
+                calibration.getPixelsPerMeter()
+        );
+    }
+
     @DeleteMapping("/floors/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteFloor(@PathVariable Long id) {

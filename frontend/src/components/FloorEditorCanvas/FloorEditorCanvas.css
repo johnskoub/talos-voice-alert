@@ -437,3 +437,32 @@
   stroke-width: 3;
   stroke-dasharray: 7 5;
 }
+
+
+.floor-calibration-point {
+  position: absolute;
+  z-index: 10;
+  display: grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  border: 2px solid #ffffff;
+  border-radius: 50%;
+  background: #f59e0b;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 900;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 3px 10px rgba(15, 23, 42, 0.35);
+}
+
+.floor-calibration-line {
+  position: absolute;
+  z-index: 9;
+  height: 3px;
+  background: #f59e0b;
+  transform-origin: left center;
+  pointer-events: none;
+  box-shadow: 0 1px 5px rgba(15, 23, 42, 0.3);
+}

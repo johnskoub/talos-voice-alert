@@ -30,9 +30,11 @@ import {
 } from '../../services/routeConnectionStorage';
 
 import { 
+  getFloor,
   getFloorElements,
   getRouteConnections,
   updateFloorElement,
+  updateFloorCalibration,
   createRouteConnection,
   createFloorElement,
  } from '../../services/api';
@@ -52,6 +54,10 @@ function FloorPlanEditorPage() {
     useState(null);
 
   const [elements, setElements] = useState([]);
+  const [backendFloor, setBackendFloor] = useState(null);
+
+  const [calibrationSaving, setCalibrationSaving] =
+  useState(false);
 
   const [elementsLoading, setElementsLoading] = useState(true);
   const [elementsLoadError, setElementsLoadError] = useState('');
@@ -84,11 +90,22 @@ function FloorPlanEditorPage() {
   useEffect(() => {
     const loadBackendData = async () => {
       try {
-        const [backendElements, backendConnections] =
-          await Promise.all([
-            getFloorElements(numericFloorId),
-            getRouteConnections(numericFloorId),
-          ]);
+        const [
+          backendFloorData,
+          backendElements,
+          backendConnections,
+        ] = await Promise.all([
+          getFloor(numericFloorId),
+          getFloorElements(numericFloorId),
+          getRouteConnections(numericFloorId),
+        ]);
+
+        setBackendFloor(backendFloorData);
+
+        console.log(
+          'TALOS backend floor:',
+          backendFloorData
+        );
 
         setElements(
           Array.isArray(backendElements)
@@ -314,6 +331,59 @@ const handleRunEvacuationAnalysis = () => {
       blockedConnectionIds: [],
     });
     clearEvacuationResults();
+  };
+
+  const handleCalibrationComplete = async ({
+    scaleRatio,
+    pixelsPerMeter,
+    pixelDistance,
+    realDistance,
+  }) => {
+    try {
+      setCalibrationSaving(true);
+
+      const updatedFloor =
+        await updateFloorCalibration(
+          numericFloorId,
+          {
+            scaleRatio,
+            pixelsPerMeter,
+          }
+        );
+
+      setBackendFloor(updatedFloor);
+
+      setSaveMessage(
+        `Η κάτοψη βαθμονομήθηκε: ${pixelsPerMeter.toFixed(
+          2
+        )} px/m (${realDistance} m).`
+      );
+
+      console.log(
+        'TALOS calibration saved:',
+        {
+          scaleRatio,
+          pixelsPerMeter,
+          pixelDistance,
+          realDistance,
+        }
+      );
+
+      window.setTimeout(() => {
+        setSaveMessage('');
+      }, 3000);
+    } catch (error) {
+      console.error(
+        'Failed to save floor calibration:',
+        error
+      );
+
+      setSaveMessage(
+        'Σφάλμα κατά την αποθήκευση της βαθμονόμησης.'
+      );
+    } finally {
+      setCalibrationSaving(false);
+    }
   };
 
   const handleSaveChanges = async () => {
@@ -640,6 +710,7 @@ const handleRunEvacuationAnalysis = () => {
           routeConnections={routeConnections}
           pendingRouteNodeId={pendingRouteNodeId}
           onRouteNodeConnect={handleRouteNodeConnect}
+          onCalibrationComplete={handleCalibrationComplete}
           fireBlockedRouteElements={fireBlockedRouteElements}
         />
 

@@ -21,3 +21,7 @@ button,
 input {
   font: inherit;
 }
+.app {
+  min-height: 100vh;
+  padding: 40px;
+}

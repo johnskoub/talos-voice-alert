@@ -17,6 +17,36 @@ async function handleResponse(response) {
 }
 
 // ================================
+// FLOORS
+// ================================
+
+export async function getFloor(floorId) {
+  const response = await fetch(
+    `${API_BASE_URL}/floors/${floorId}`
+  );
+
+  return handleResponse(response);
+}
+
+export async function updateFloorCalibration(
+  floorId,
+  calibration
+) {
+  const response = await fetch(
+    `${API_BASE_URL}/floors/${floorId}/calibration`,
+    {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(calibration),
+    }
+  );
+
+  return handleResponse(response);
+}
+
+// ================================
 // FLOOR ELEMENTS
 // ================================
 

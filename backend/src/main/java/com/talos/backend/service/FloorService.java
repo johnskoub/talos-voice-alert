@@ -21,7 +21,8 @@ public class FloorService {
 
     public Floor getFloorById(Long id) {
         return floorRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Floor not found with id: " + id));
+                .orElseThrow(() ->
+                        new RuntimeException("Floor not found with id: " + id));
     }
 
     public Floor createFloor(Long companyId, Floor floor) {
@@ -36,7 +37,24 @@ public class FloorService {
         existingFloor.setFloorNumber(updatedFloor.getFloorNumber());
         existingFloor.setDescription(updatedFloor.getDescription());
         existingFloor.setFloorPlanImage(updatedFloor.getFloorPlanImage());
+
+        existingFloor.setScaleRatio(updatedFloor.getScaleRatio());
+        existingFloor.setPixelsPerMeter(updatedFloor.getPixelsPerMeter());
+
         existingFloor.setActive(updatedFloor.getActive());
+
+        return floorRepository.save(existingFloor);
+    }
+
+    public Floor updateCalibration(
+            Long id,
+            Double scaleRatio,
+            Double pixelsPerMeter
+    ) {
+        Floor existingFloor = getFloorById(id);
+
+        existingFloor.setScaleRatio(scaleRatio);
+        existingFloor.setPixelsPerMeter(pixelsPerMeter);
 
         return floorRepository.save(existingFloor);
     }

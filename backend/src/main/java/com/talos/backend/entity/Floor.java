@@ -27,6 +27,21 @@ public class Floor {
     @Column(name = "floor_plan_image", length = 500)
     private String floorPlanImage;
 
+    /*
+     * Floor plan calibration
+     *
+     * Example:
+     * scaleRatio = 100  -> scale 1:100
+     *
+     * pixelsPerMeter stores the real conversion
+     * between the floor-plan image and real-world meters.
+     */
+    @Column(name = "scale_ratio")
+    private Double scaleRatio;
+
+    @Column(name = "pixels_per_meter")
+    private Double pixelsPerMeter;
+
     @Column(name = "is_active", nullable = false)
     private Boolean active = true;
 
@@ -85,6 +100,22 @@ public class Floor {
 
     public void setFloorPlanImage(String floorPlanImage) {
         this.floorPlanImage = floorPlanImage;
+    }
+
+    public Double getScaleRatio() {
+        return scaleRatio;
+    }
+
+    public void setScaleRatio(Double scaleRatio) {
+        this.scaleRatio = scaleRatio;
+    }
+
+    public Double getPixelsPerMeter() {
+        return pixelsPerMeter;
+    }
+
+    public void setPixelsPerMeter(Double pixelsPerMeter) {
+        this.pixelsPerMeter = pixelsPerMeter;
     }
 
     public Boolean getActive() {

@@ -79,6 +79,7 @@ function FloorEditorCanvas({
   routeConnections,
   pendingRouteNodeId,
   onRouteNodeConnect,
+  onCalibrationComplete,
   fireBlockedRouteElements = {
     blockedNodeIds: [],
     blockedConnectionIds: [],
@@ -88,6 +89,8 @@ function FloorEditorCanvas({
 
   const [draggingElementId, setDraggingElementId] = useState(null);
   const [draftZone, setDraftZone] = useState(null);
+
+  const [calibrationPoints, setCalibrationPoints] = useState([]);
 
   const [draggingZone, setDraggingZone] = useState(null);
   const [resizingZone, setResizingZone] = useState(null);
@@ -129,6 +132,24 @@ function FloorEditorCanvas({
     };
   };
 
+  const calculatePointerPixelPosition = (event) => {
+    const image = imageRef.current;
+
+    if (!image) {
+      return null;
+    }
+
+    const imageRectangle = image.getBoundingClientRect();
+
+    const x = event.clientX - imageRectangle.left;
+    const y = event.clientY - imageRectangle.top;
+
+    return {
+      x,
+      y,
+    };
+  };
+
   const isPointerInsideImage = (event) => {
     const image = imageRef.current;
 
@@ -147,6 +168,110 @@ function FloorEditorCanvas({
   };
 
   const handleCanvasClick = (event) => {
+
+    if (activeTool === 'CALIBRATION') {
+      event.stopPropagation();
+
+      if (!isPointerInsideImage(event)) {
+        return;
+      }
+
+      const pixelPosition =
+        calculatePointerPixelPosition(event);
+
+      if (!pixelPosition) {
+        return;
+      }
+
+      const newPoints = [
+        ...calibrationPoints,
+        pixelPosition,
+      ];
+
+      if (newPoints.length === 2) {
+        const firstPoint = newPoints[0];
+        const secondPoint = newPoints[1];
+
+        const deltaX =
+          secondPoint.x - firstPoint.x;
+
+        const deltaY =
+          secondPoint.y - firstPoint.y;
+
+        const pixelDistance = Math.sqrt(
+          deltaX * deltaX +
+          deltaY * deltaY
+        );
+
+        const scaleInput = window.prompt(
+          'Ποια είναι η κλίμακα της κάτοψης;\\n\\nΠαράδειγμα: για κλίμακα 1:100 γράψε 100.',
+          '100'
+        );
+
+        if (scaleInput === null) {
+          setCalibrationPoints([]);
+          return;
+        }
+
+        const scaleRatio = Number(scaleInput);
+
+        if (
+          !Number.isFinite(scaleRatio) ||
+          scaleRatio <= 0
+        ) {
+          window.alert(
+            'Η κλίμακα πρέπει να είναι θετικός αριθμός.'
+          );
+
+          setCalibrationPoints([]);
+          return;
+        }
+
+        const realDistanceInput = window.prompt(
+          'Πόσα μέτρα είναι η πραγματική απόσταση μεταξύ των δύο σημείων;',
+          '5'
+        );
+
+        if (realDistanceInput === null) {
+          setCalibrationPoints([]);
+          return;
+        }
+
+        const realDistance =
+          Number(realDistanceInput);
+
+        if (
+          !Number.isFinite(realDistance) ||
+          realDistance <= 0
+        ) {
+          window.alert(
+            'Η πραγματική απόσταση πρέπει να είναι θετικός αριθμός.'
+          );
+
+          setCalibrationPoints([]);
+          return;
+        }
+
+        const pixelsPerMeter =
+          pixelDistance / realDistance;
+
+        if (onCalibrationComplete) {
+          onCalibrationComplete({
+            scaleRatio,
+            pixelsPerMeter,
+            pixelDistance,
+            realDistance,
+          });
+        }
+
+        setCalibrationPoints([]);
+        return;
+      }
+
+      setCalibrationPoints(newPoints);
+      return;
+    }
+    
     if (activeTool === 'SELECT') {
       onElementSelect(null);
       return;
@@ -657,6 +782,49 @@ const handleZoneResizePointerUp = (event, zoneId) => {
             alt={`Κάτοψη ${imageName}`}
             draggable="false"
           />
+
+          {activeTool === 'CALIBRATION' &&
+            calibrationPoints.map((point, index) => (
+              <div
+                key={`calibration-point-${index}`}
+                className="floor-calibration-point"
+                style={{
+                  left: `${point.x}px`,
+                  top: `${point.y}px`,
+                }}
+              >
+                {index + 1}
+              </div>
+            ))}
+
+          {activeTool === 'CALIBRATION' &&
+            calibrationPoints.length === 2 && (
+              <div
+                className="floor-calibration-line"
+                style={{
+                  left: `${calibrationPoints[0].x}px`,
+                  top: `${calibrationPoints[0].y}px`,
+                  width: `${Math.sqrt(
+                    Math.pow(
+                      calibrationPoints[1].x -
+                        calibrationPoints[0].x,
+                      2
+                    ) +
+                    Math.pow(
+                      calibrationPoints[1].y -
+                        calibrationPoints[0].y,
+                      2
+                    )
+                  )}px`,
+                  transform: `rotate(${Math.atan2(
+                    calibrationPoints[1].y -
+                      calibrationPoints[0].y,
+                    calibrationPoints[1].x -
+                      calibrationPoints[0].x
+                  )}rad)`,
+                }}
+              />
+            )}
 
           <div className="floor-zones-layer">
             {zones.map((zone) => {

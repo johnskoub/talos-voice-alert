@@ -466,3 +466,33 @@
   pointer-events: none;
   box-shadow: 0 1px 5px rgba(15, 23, 42, 0.3);
 }
+
+.floor-walls-layer {
+  position: absolute;
+  z-index: 3;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.floor-wall {
+  stroke: #334155;
+  stroke-width: 5px;
+  stroke-linecap: round;
+  opacity: 0.95;
+  vector-effect: non-scaling-stroke;
+}
+
+.floor-wall--draft {
+  stroke: #64748b;
+  stroke-width: 4px;
+  stroke-dasharray: 8 6;
+  opacity: 0.75;
+}
+
+.floor-wall--selected {
+  stroke: #dc2626;
+  stroke-width: 7px;
+}

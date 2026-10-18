@@ -13,6 +13,9 @@ const editorTools = [
   { id: 'ROUTE_NODE', icon: '◆', label: 'Route Node' },
   { id: 'CONNECT_NODES', icon: '─', label: 'Connect Nodes' },
 
+  // Wall
+  { id: 'WALL', icon: '│', label: 'Wall' },
+
   // Calibration
   { id: 'CALIBRATION', icon: '📏', label: 'Calibration' },
 

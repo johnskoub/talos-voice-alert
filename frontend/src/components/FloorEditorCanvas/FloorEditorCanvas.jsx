@@ -80,15 +80,18 @@ function FloorEditorCanvas({
   pendingRouteNodeId,
   onRouteNodeConnect,
   onCalibrationComplete,
+  onImageDimensionsChange,
   fireBlockedRouteElements = {
     blockedNodeIds: [],
     blockedConnectionIds: [],
   },
+  
 }) {
   const imageRef = useRef(null);
 
   const [draggingElementId, setDraggingElementId] = useState(null);
   const [draftZone, setDraftZone] = useState(null);
+  const [draftWall, setDraftWall] = useState(null);
 
   const [calibrationPoints, setCalibrationPoints] = useState([]);
 
@@ -139,14 +142,33 @@ function FloorEditorCanvas({
       return null;
     }
 
-    const imageRectangle = image.getBoundingClientRect();
+    const imageRectangle =
+      image.getBoundingClientRect();
 
-    const x = event.clientX - imageRectangle.left;
-    const y = event.clientY - imageRectangle.top;
+    if (
+      imageRectangle.width <= 0 ||
+      imageRectangle.height <= 0 ||
+      image.naturalWidth <= 0 ||
+      image.naturalHeight <= 0
+    ) {
+      return null;
+    }
+
+    const displayX =
+      event.clientX - imageRectangle.left;
+
+    const displayY =
+      event.clientY - imageRectangle.top;
+
+    const scaleX =
+      image.naturalWidth / imageRectangle.width;
+
+    const scaleY =
+      image.naturalHeight / imageRectangle.height;
 
     return {
-      x,
-      y,
+      x: displayX * scaleX,
+      y: displayY * scaleY,
     };
   };
 
@@ -350,6 +372,93 @@ function FloorEditorCanvas({
     };
 
     onElementsChange([...elements, newElement]);
+  };
+
+  const handleWallPointerDown = (event) => {
+    if (activeTool !== 'WALL') {
+      return;
+    }
+
+    if (!isPointerInsideImage(event)) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    const position = calculatePointerPosition(event);
+
+    if (!position) {
+      return;
+    }
+
+    setDraftWall({
+      startX: position.x,
+      startY: position.y,
+      endX: position.x,
+      endY: position.y,
+    });
+
+    event.currentTarget.setPointerCapture(event.pointerId);
+  };
+
+  const handleWallPointerMove = (event) => {
+    if (activeTool !== 'WALL' || !draftWall) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    const position = calculatePointerPosition(event);
+
+    if (!position) {
+      return;
+    }
+
+    setDraftWall((currentWall) => ({
+      ...currentWall,
+      endX: position.x,
+      endY: position.y,
+    }));
+  };
+
+  const handleWallPointerUp = (event) => {
+    if (activeTool !== 'WALL' || !draftWall) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+
+    const deltaX = draftWall.endX - draftWall.startX;
+    const deltaY = draftWall.endY - draftWall.startY;
+
+    const wallLength = Math.sqrt(
+      deltaX * deltaX + deltaY * deltaY
+    );
+
+    // Αποφεύγουμε τη δημιουργία τοίχου με ένα απλό click.
+    if (wallLength >= 1) {
+      const newWall = {
+        id: createElementId(),
+        type: 'WALL',
+        startX: draftWall.startX,
+        startY: draftWall.startY,
+        endX: draftWall.endX,
+        endY: draftWall.endY,
+        status: 'ACTIVE',
+      };
+
+      onElementsChange([...elements, newWall]);
+      onElementSelect(newWall.id);
+    }
+
+    setDraftWall(null);
   };
 
   const handleZonePointerDown = (event) => {
@@ -754,6 +863,24 @@ const handleZoneResizePointerUp = (event, zoneId) => {
         </div>
       </div>
 
+      // Εμφάνιση προσωρινού τοίχου όταν σχεδιάζεται
+      {draftWall && (
+        <svg
+          className="floor-walls-layer"
+          viewBox="0 0 100 100"
+          preserveAspectRatio="none"
+          aria-hidden="true"
+        >
+          <line
+            className="floor-wall floor-wall--draft"
+            x1={draftWall.startX}
+            y1={draftWall.startY}
+            x2={draftWall.endX}
+            y2={draftWall.endY}
+          />
+        </svg>
+      )}
+
       <div className="floor-editor-workspace">
         <div
           className={`floor-editor-image-stage ${
@@ -770,10 +897,38 @@ const handleZoneResizePointerUp = (event, zoneId) => {
               : ''
           }`}
           onClick={handleCanvasClick}
-          onPointerDown={handleZonePointerDown}
-          onPointerMove={handleZonePointerMove}
-          onPointerUp={handleZonePointerUp}
-          onPointerCancel={handleZonePointerUp}
+          onPointerDown={(event) => {
+            if (activeTool === 'WALL') {
+              handleWallPointerDown(event);
+              return;
+            }
+
+            handleZonePointerDown(event);
+          }}
+          onPointerMove={(event) => {
+            if (activeTool === 'WALL') {
+              handleWallPointerMove(event);
+              return;
+            }
+
+            handleZonePointerMove(event);
+          }}
+          onPointerUp={(event) => {
+            if (activeTool === 'WALL') {
+              handleWallPointerUp(event);
+              return;
+            }
+
+            handleZonePointerUp(event);
+          }}
+          onPointerCancel={(event) => {
+            if (activeTool === 'WALL') {
+              handleWallPointerUp(event);
+              return;
+            }
+
+            handleZonePointerUp(event);
+          }}
           role="presentation"
         >
           <img
@@ -781,6 +936,16 @@ const handleZoneResizePointerUp = (event, zoneId) => {
             src={imageUrl}
             alt={`Κάτοψη ${imageName}`}
             draggable="false"
+            onLoad={(event) => {
+              const image = event.currentTarget;
+
+              if (onImageDimensionsChange) {
+                onImageDimensionsChange({
+                  width: image.naturalWidth,
+                  height: image.naturalHeight,
+                });
+              }
+            }}
           />
 
           {activeTool === 'CALIBRATION' &&
@@ -926,6 +1091,35 @@ const handleZoneResizePointerUp = (event, zoneId) => {
               </div>
             )}
           </div>
+
+          <svg
+            className="floor-walls-layer"
+            viewBox="0 0 100 100"
+            preserveAspectRatio="none"
+            aria-label="Τοίχοι κάτοψης"
+          >
+            {elements
+              .filter((element) => element.type === 'WALL')
+              .map((wall) => {
+                const isSelected =
+                  selectedElementId === wall.id;
+
+                return (
+                  <line
+                    key={wall.id}
+                    x1={wall.startX}
+                    y1={wall.startY}
+                    x2={wall.endX}
+                    y2={wall.endY}
+                    className={`floor-wall ${
+                      isSelected
+                        ? 'floor-wall--selected'
+                        : ''
+                    }`}
+                  />
+                );
+              })}
+          </svg>  
 
           <svg
             className="route-connections-layer"

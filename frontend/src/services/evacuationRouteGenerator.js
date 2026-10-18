@@ -2,7 +2,14 @@ function clampPercentage(value) {
   return Math.min(100, Math.max(0, value));
 }
 
-function calculateDistance(firstPoint, secondPoint) {
+// ============================================================
+// DISTANCE / CALIBRATION
+// ============================================================
+
+function calculateCoordinateDistance(
+  firstPoint,
+  secondPoint
+) {
   const horizontalDifference =
     secondPoint.x - firstPoint.x;
 
@@ -15,74 +22,216 @@ function calculateDistance(firstPoint, secondPoint) {
   );
 }
 
-function calculatePointToSegmentDistance(
+/*
+ * Τα Floor Elements αποθηκεύονται με x/y σε ποσοστά 0-100
+ * πάνω στην κάτοψη.
+ *
+ * Εδώ:
+ *
+ * percentage
+ *     ↓
+ * intrinsic image pixels
+ *     ↓
+ * pixelsPerMeter
+ *     ↓
+ * πραγματικά μέτρα
+ */
+function pointToImagePixels(
+  point,
+  imageWidth,
+  imageHeight
+) {
+  if (
+    !point ||
+    !Number.isFinite(imageWidth) ||
+    !Number.isFinite(imageHeight) ||
+    imageWidth <= 0 ||
+    imageHeight <= 0
+  ) {
+    return null;
+  }
+
+  return {
+    x: (Number(point.x) / 100) * imageWidth,
+    y: (Number(point.y) / 100) * imageHeight,
+  };
+}
+
+function calculateDistanceMeters(
+  firstPoint,
+  secondPoint,
+  imageWidth,
+  imageHeight,
+  pixelsPerMeter
+) {
+  if (
+    !Number.isFinite(pixelsPerMeter) ||
+    pixelsPerMeter <= 0
+  ) {
+    return null;
+  }
+
+  const firstPixelPoint =
+    pointToImagePixels(
+      firstPoint,
+      imageWidth,
+      imageHeight
+    );
+
+  const secondPixelPoint =
+    pointToImagePixels(
+      secondPoint,
+      imageWidth,
+      imageHeight
+    );
+
+  if (
+    !firstPixelPoint ||
+    !secondPixelPoint
+  ) {
+    return null;
+  }
+
+  const pixelDistance =
+    calculateCoordinateDistance(
+      firstPixelPoint,
+      secondPixelPoint
+    );
+
+  return pixelDistance / pixelsPerMeter;
+}
+
+function calculatePointToSegmentDistanceMeters(
   point,
   segmentStart,
-  segmentEnd
+  segmentEnd,
+  imageWidth,
+  imageHeight,
+  pixelsPerMeter
 ) {
+  const pointPixels =
+    pointToImagePixels(
+      point,
+      imageWidth,
+      imageHeight
+    );
+
+  const segmentStartPixels =
+    pointToImagePixels(
+      segmentStart,
+      imageWidth,
+      imageHeight
+    );
+
+  const segmentEndPixels =
+    pointToImagePixels(
+      segmentEnd,
+      imageWidth,
+      imageHeight
+    );
+
+  if (
+    !pointPixels ||
+    !segmentStartPixels ||
+    !segmentEndPixels ||
+    !Number.isFinite(pixelsPerMeter) ||
+    pixelsPerMeter <= 0
+  ) {
+    return null;
+  }
+
   const segmentX =
-    segmentEnd.x - segmentStart.x;
+    segmentEndPixels.x -
+    segmentStartPixels.x;
 
   const segmentY =
-    segmentEnd.y - segmentStart.y;
+    segmentEndPixels.y -
+    segmentStartPixels.y;
 
   const segmentLengthSquared =
-    segmentX ** 2 + segmentY ** 2;
+    segmentX ** 2 +
+    segmentY ** 2;
 
   if (segmentLengthSquared === 0) {
-    return calculateDistance(
-      point,
-      segmentStart
+    return (
+      calculateCoordinateDistance(
+        pointPixels,
+        segmentStartPixels
+      ) / pixelsPerMeter
     );
   }
 
   const projection =
     (
-      (point.x - segmentStart.x) * segmentX +
-      (point.y - segmentStart.y) * segmentY
+      (pointPixels.x - segmentStartPixels.x) *
+        segmentX +
+      (pointPixels.y - segmentStartPixels.y) *
+        segmentY
     ) / segmentLengthSquared;
 
   const clampedProjection =
-    Math.max(0, Math.min(1, projection));
+    Math.max(
+      0,
+      Math.min(1, projection)
+    );
 
   const closestPoint = {
     x:
-      segmentStart.x +
+      segmentStartPixels.x +
       clampedProjection * segmentX,
+
     y:
-      segmentStart.y +
+      segmentStartPixels.y +
       clampedProjection * segmentY,
   };
 
-  return calculateDistance(
-    point,
-    closestPoint
+  return (
+    calculateCoordinateDistance(
+      pointPixels,
+      closestPoint
+    ) / pixelsPerMeter
   );
 }
 
-const FIRE_NODE_BLOCKING_DISTANCE = 5;
+// ============================================================
+// FIRE DISTANCES — ALL IN METERS
+// ============================================================
 
-const FIRE_CONNECTION_BLOCKING_DISTANCE = 7;
+const FIRE_NODE_BLOCKING_DISTANCE_METERS = 5;
 
-const FIRE_EXIT_APPROACH_DISTANCE = 9;
+const FIRE_CONNECTION_BLOCKING_DISTANCE_METERS = 7;
+
+const FIRE_EXIT_APPROACH_DISTANCE_METERS = 9;
+
+// ============================================================
+// FIRE BLOCKING
+// ============================================================
 
 function isRouteNodeBlockedByFire(
   routeNode,
-  firePoint
+  firePoint,
+  calibration
 ) {
   if (!firePoint) {
     return false;
   }
 
   const distanceFromFire =
-    calculateDistance(
+    calculateDistanceMeters(
       routeNode,
-      firePoint
+      firePoint,
+      calibration.imageWidth,
+      calibration.imageHeight,
+      calibration.pixelsPerMeter
     );
+
+  if (distanceFromFire === null) {
+    return false;
+  }
 
   return (
     distanceFromFire <
-    FIRE_NODE_BLOCKING_DISTANCE
+    FIRE_NODE_BLOCKING_DISTANCE_METERS
   );
 }
 
@@ -90,38 +239,51 @@ function isRouteConnectionBlockedByFire({
   connection,
   nodeById,
   firePoint,
+  calibration,
 }) {
   if (!firePoint) {
     return false;
   }
 
   const fromNode =
-    nodeById.get(connection.fromNodeId);
+    nodeById.get(
+      connection.fromNodeId
+    );
 
   const toNode =
-    nodeById.get(connection.toNodeId);
+    nodeById.get(
+      connection.toNodeId
+    );
 
   if (!fromNode || !toNode) {
     return true;
   }
 
   const distanceFromFire =
-    calculatePointToSegmentDistance(
+    calculatePointToSegmentDistanceMeters(
       firePoint,
       fromNode,
-      toNode
+      toNode,
+      calibration.imageWidth,
+      calibration.imageHeight,
+      calibration.pixelsPerMeter
     );
+
+  if (distanceFromFire === null) {
+    return false;
+  }
 
   return (
     distanceFromFire <
-    FIRE_CONNECTION_BLOCKING_DISTANCE
+    FIRE_CONNECTION_BLOCKING_DISTANCE_METERS
   );
 }
 
 export function getFireBlockedRouteElements(
   elements = [],
   routeConnections = [],
-  firePoint = null
+  firePoint = null,
+  floor = null
 ) {
   if (!firePoint) {
     return {
@@ -130,28 +292,42 @@ export function getFireBlockedRouteElements(
     };
   }
 
-  const routeNodes = elements.filter(
-    (element) => element.type === 'ROUTE_NODE'
-  );
+  const calibration = {
+    imageWidth:
+      Number(floor?.imageWidth),
+    imageHeight:
+      Number(floor?.imageHeight),
+    pixelsPerMeter:
+      Number(floor?.pixelsPerMeter),
+  };
 
-  const blockedNodeIds = routeNodes
-    .filter((node) =>
-      isRouteNodeBlockedByFire(
-        node,
-        firePoint
+  const routeNodes =
+    elements.filter(
+      (element) =>
+        element.type === 'ROUTE_NODE'
+    );
+
+  const blockedNodeIds =
+    routeNodes
+      .filter((node) =>
+        isRouteNodeBlockedByFire(
+          node,
+          firePoint,
+          calibration
+        )
       )
-    )
-    .map((node) => node.id);
+      .map((node) => node.id);
 
   const blockedNodeIdSet =
     new Set(blockedNodeIds);
 
-  const nodeById = new Map(
-    routeNodes.map((node) => [
-      node.id,
-      node,
-    ])
-  );
+  const nodeById =
+    new Map(
+      routeNodes.map((node) => [
+        node.id,
+        node,
+      ])
+    );
 
   const blockedConnectionIds =
     routeConnections
@@ -169,6 +345,7 @@ export function getFireBlockedRouteElements(
             connection,
             nodeById,
             firePoint,
+            calibration,
           });
 
         return (
@@ -176,7 +353,10 @@ export function getFireBlockedRouteElements(
           blockedByFire
         );
       })
-      .map((connection) => connection.id);
+      .map(
+        (connection) =>
+          connection.id
+      );
 
   return {
     blockedNodeIds,
@@ -184,66 +364,25 @@ export function getFireBlockedRouteElements(
   };
 }
 
-function createIntermediatePoint(occupant, exit) {
-  const horizontalDistance = Math.abs(
-    exit.x - occupant.x
-  );
-
-  const verticalDistance = Math.abs(
-    exit.y - occupant.y
-  );
-
-  if (horizontalDistance >= verticalDistance) {
-    return {
-      x: clampPercentage(exit.x),
-      y: clampPercentage(occupant.y),
-    };
-  }
-
-  return {
-    x: clampPercentage(occupant.x),
-    y: clampPercentage(exit.y),
-  };
-}
-
-function findNearestRouteNode(point, routeNodes) {
-  if (!point || routeNodes.length === 0) {
-    return null;
-  }
-
-  return routeNodes.reduce(
-    (nearestNode, currentNode) => {
-      if (!nearestNode) {
-        return currentNode;
-      }
-
-      const currentDistance =
-        calculateDistance(point, currentNode);
-
-      const nearestDistance =
-        calculateDistance(point, nearestNode);
-
-      return currentDistance < nearestDistance
-        ? currentNode
-        : nearestNode;
-    },
-    null
-  );
-}
+// ============================================================
+// ROUTE GRAPH
+// ============================================================
 
 function buildRouteGraph(
   routeNodes,
   routeConnections,
-  firePoint
+  firePoint,
+  calibration
 ) {
   const graph = new Map();
 
-  const nodeById = new Map(
-    routeNodes.map((node) => [
-      node.id,
-      node,
-    ])
-  );
+  const nodeById =
+    new Map(
+      routeNodes.map((node) => [
+        node.id,
+        node,
+      ])
+    );
 
   routeNodes.forEach((node) => {
     graph.set(node.id, []);
@@ -260,43 +399,61 @@ function buildRouteGraph(
           connection,
           nodeById,
           firePoint,
+          calibration,
         })
     )
     .forEach((connection) => {
       const fromNode =
-        nodeById.get(connection.fromNodeId);
+        nodeById.get(
+          connection.fromNodeId
+        );
 
       const toNode =
-        nodeById.get(connection.toNodeId);
+        nodeById.get(
+          connection.toNodeId
+        );
 
       if (!fromNode || !toNode) {
         return;
       }
 
       if (
-        !graph.has(connection.fromNodeId) ||
-        !graph.has(connection.toNodeId)
+        !graph.has(
+          connection.fromNodeId
+        ) ||
+        !graph.has(
+          connection.toNodeId
+        )
       ) {
         return;
       }
 
       const distance =
-        calculateDistance(
+        calculateDistanceMeters(
           fromNode,
-          toNode
+          toNode,
+          calibration.imageWidth,
+          calibration.imageHeight,
+          calibration.pixelsPerMeter
         );
+
+      if (distance === null) {
+        return;
+      }
 
       graph
         .get(connection.fromNodeId)
         .push({
-          nodeId: connection.toNodeId,
+          nodeId:
+            connection.toNodeId,
           weight: distance,
         });
 
       graph
         .get(connection.toNodeId)
         .push({
-          nodeId: connection.fromNodeId,
+          nodeId:
+            connection.fromNodeId,
           weight: distance,
         });
     });
@@ -304,16 +461,25 @@ function buildRouteGraph(
   return graph;
 }
 
+// ============================================================
+// DIJKSTRA
+// ============================================================
+
 function findGraphPath({
   startNodeId,
   targetNodeId,
   graph,
 }) {
-  if (!startNodeId || !targetNodeId) {
+  if (
+    !startNodeId ||
+    !targetNodeId
+  ) {
     return null;
   }
 
-  if (startNodeId === targetNodeId) {
+  if (
+    startNodeId === targetNodeId
+  ) {
     return {
       nodeIds: [startNodeId],
       totalDistance: 0,
@@ -322,21 +488,26 @@ function findGraphPath({
 
   const distances = new Map();
   const previousNode = new Map();
-  const unvisited = new Set(
-    graph.keys()
+  const unvisited =
+    new Set(graph.keys());
+
+  graph.forEach(
+    (_, nodeId) => {
+      distances.set(
+        nodeId,
+        Number.POSITIVE_INFINITY
+      );
+    }
   );
 
-  graph.forEach((_, nodeId) => {
-    distances.set(
-      nodeId,
-      Number.POSITIVE_INFINITY
-    );
-  });
-
-  distances.set(startNodeId, 0);
+  distances.set(
+    startNodeId,
+    0
+  );
 
   while (unvisited.size > 0) {
     let currentNodeId = null;
+
     let currentDistance =
       Number.POSITIVE_INFINITY;
 
@@ -344,9 +515,15 @@ function findGraphPath({
       const nodeDistance =
         distances.get(nodeId);
 
-      if (nodeDistance < currentDistance) {
-        currentDistance = nodeDistance;
-        currentNodeId = nodeId;
+      if (
+        nodeDistance <
+        currentDistance
+      ) {
+        currentDistance =
+          nodeDistance;
+
+        currentNodeId =
+          nodeId;
       }
     }
 
@@ -358,17 +535,28 @@ function findGraphPath({
       break;
     }
 
-    if (currentNodeId === targetNodeId) {
+    if (
+      currentNodeId ===
+      targetNodeId
+    ) {
       break;
     }
 
-    unvisited.delete(currentNodeId);
+    unvisited.delete(
+      currentNodeId
+    );
 
     const neighbours =
-      graph.get(currentNodeId) || [];
+      graph.get(
+        currentNodeId
+      ) || [];
 
     for (const neighbour of neighbours) {
-      if (!unvisited.has(neighbour.nodeId)) {
+      if (
+        !unvisited.has(
+          neighbour.nodeId
+        )
+      ) {
         continue;
       }
 
@@ -378,7 +566,9 @@ function findGraphPath({
 
       if (
         alternativeDistance <
-        distances.get(neighbour.nodeId)
+        distances.get(
+          neighbour.nodeId
+        )
       ) {
         distances.set(
           neighbour.nodeId,
@@ -394,7 +584,9 @@ function findGraphPath({
   }
 
   const targetDistance =
-    distances.get(targetNodeId);
+    distances.get(
+      targetNodeId
+    );
 
   if (
     targetDistance ===
@@ -403,31 +595,47 @@ function findGraphPath({
     return null;
   }
 
-  const path = [targetNodeId];
+  const path = [
+    targetNodeId,
+  ];
 
   let currentPathNode =
     targetNodeId;
 
   while (
-    previousNode.has(currentPathNode)
+    previousNode.has(
+      currentPathNode
+    )
   ) {
     currentPathNode =
-      previousNode.get(currentPathNode);
+      previousNode.get(
+        currentPathNode
+      );
 
-    path.unshift(currentPathNode);
+    path.unshift(
+      currentPathNode
+    );
   }
 
-  if (path[0] !== startNodeId) {
+  if (
+    path[0] !== startNodeId
+  ) {
     return null;
   }
 
   return {
     nodeIds: path,
-    totalDistance: Number(
-      targetDistance.toFixed(2)
-    ),
+
+    totalDistance:
+      Number(
+        targetDistance.toFixed(2)
+      ),
   };
 }
+
+// ============================================================
+// BEST GRAPH ROUTE
+// ============================================================
 
 function createRouteUsingGraph({
   occupant,
@@ -435,6 +643,7 @@ function createRouteUsingGraph({
   routeNodes,
   routeConnections,
   firePoint,
+  calibration,
 }) {
   const availableRouteNodes =
     routeNodes.filter(
@@ -442,96 +651,172 @@ function createRouteUsingGraph({
         node.status !== 'BLOCKED' &&
         !isRouteNodeBlockedByFire(
           node,
-          firePoint
+          firePoint,
+          calibration
         )
     );
 
-  if (availableRouteNodes.length === 0) {
+  if (
+    availableRouteNodes.length === 0
+  ) {
     return null;
   }
 
-  const occupantNode =
-    findNearestRouteNode(
-      occupant,
-      availableRouteNodes
+  /*
+   * Δεν παίρνουμε πλέον απλώς
+   * τον πλησιέστερο Route Node.
+   *
+   * Δοκιμάζουμε κάθε διαθέσιμο node
+   * ως πιθανό start/end node.
+   *
+   * Έτσι αποφεύγουμε την περίπτωση:
+   *
+   * "πλησιέστερο node = απομονωμένο"
+   *
+   * ενώ ένα λίγο πιο μακρινό node
+   * οδηγεί σε πολύ καλύτερη διαδρομή.
+   */
+
+  const graph =
+    buildRouteGraph(
+      availableRouteNodes,
+      routeConnections,
+      firePoint,
+      calibration
     );
 
-  const exitNode =
-    findNearestRouteNode(
-      exit,
-      availableRouteNodes
-    );
+  let bestRoute = null;
 
-  if (!occupantNode || !exitNode) {
+  for (
+    const occupantNode
+    of availableRouteNodes
+  ) {
+    const occupantConnectionDistance =
+      calculateDistanceMeters(
+        occupant,
+        occupantNode,
+        calibration.imageWidth,
+        calibration.imageHeight,
+        calibration.pixelsPerMeter
+      );
+
+    if (
+      occupantConnectionDistance === null
+    ) {
+      continue;
+    }
+
+    const occupantConnectionBlockedByFire =
+      firePoint &&
+      calculatePointToSegmentDistanceMeters(
+        firePoint,
+        occupant,
+        occupantNode,
+        calibration.imageWidth,
+        calibration.imageHeight,
+        calibration.pixelsPerMeter
+      ) <
+        FIRE_NODE_BLOCKING_DISTANCE_METERS;
+
+    if (
+      occupantConnectionBlockedByFire
+    ) {
+      continue;
+    }
+
+    for (
+      const exitNode
+      of availableRouteNodes
+    ) {
+      const exitConnectionDistance =
+        calculateDistanceMeters(
+          exitNode,
+          exit,
+          calibration.imageWidth,
+          calibration.imageHeight,
+          calibration.pixelsPerMeter
+        );
+
+      if (
+        exitConnectionDistance === null
+      ) {
+        continue;
+      }
+
+      const exitConnectionBlockedByFire =
+        firePoint &&
+        calculatePointToSegmentDistanceMeters(
+          firePoint,
+          exitNode,
+          exit,
+          calibration.imageWidth,
+          calibration.imageHeight,
+          calibration.pixelsPerMeter
+        ) <
+          FIRE_EXIT_APPROACH_DISTANCE_METERS;
+
+      if (
+        exitConnectionBlockedByFire
+      ) {
+        continue;
+      }
+
+      const graphPath =
+        findGraphPath({
+          startNodeId:
+            occupantNode.id,
+
+          targetNodeId:
+            exitNode.id,
+
+          graph,
+        });
+
+      if (!graphPath) {
+        continue;
+      }
+
+      const totalDistance =
+        occupantConnectionDistance +
+        graphPath.totalDistance +
+        exitConnectionDistance;
+
+      if (
+        !bestRoute ||
+        totalDistance <
+          bestRoute.totalDistance
+      ) {
+        bestRoute = {
+          occupantNode,
+          exitNode,
+          graphPath,
+
+          totalDistance:
+            Number(
+              totalDistance.toFixed(2)
+            ),
+        };
+      }
+    }
+  }
+
+  if (!bestRoute) {
     return null;
   }
 
-  const occupantConnectionBlockedByFire =
-    calculatePointToSegmentDistance(
-      firePoint,
-      occupant,
-      occupantNode
-    ) < FIRE_NODE_BLOCKING_DISTANCE;
-
-  if (occupantConnectionBlockedByFire) {
-    return null;
-  }
-
-  const exitConnectionBlockedByFire =
-    calculatePointToSegmentDistance(
-      firePoint,
-      exitNode,
-      exit
-    ) < FIRE_EXIT_APPROACH_DISTANCE;
-
-  if (exitConnectionBlockedByFire) {
-    return null;
-  }
-
-  const graph = buildRouteGraph(
-    availableRouteNodes,
-    routeConnections,
-    firePoint
-  );
-
-  const graphPath = findGraphPath({
-    startNodeId: occupantNode.id,
-    targetNodeId: exitNode.id,
-    graph,
-  });
-
-  if (!graphPath) {
-    return null;
-  }
-
-  const nodePoints = graphPath.nodeIds
-    .map((nodeId) =>
-      availableRouteNodes.find(
-        (node) => node.id === nodeId
+  const nodePoints =
+    bestRoute.graphPath.nodeIds
+      .map((nodeId) =>
+        availableRouteNodes.find(
+          (node) =>
+            node.id === nodeId
+        )
       )
-    )
-    .filter(Boolean)
-    .map((node) => ({
-      x: node.x,
-      y: node.y,
-    }));
-
-  const occupantToStartNodeDistance =
-    calculateDistance(
-      occupant,
-      occupantNode
-    );
-
-  const exitNodeToExitDistance =
-    calculateDistance(
-      exitNode,
-      exit
-    );
-
-  const totalDistance =
-    occupantToStartNodeDistance +
-    graphPath.totalDistance +
-    exitNodeToExitDistance;
+      .filter(Boolean)
+      .map((node) => ({
+        x: node.x,
+        y: node.y,
+      }));
 
   return {
     points: [
@@ -539,109 +824,241 @@ function createRouteUsingGraph({
         x: occupant.x,
         y: occupant.y,
       },
+
       ...nodePoints,
+
       {
         x: exit.x,
         y: exit.y,
       },
     ],
 
-    totalDistance: Number(
-      totalDistance.toFixed(2)
-    ),
+    totalDistance:
+      bestRoute.totalDistance,
+
+    startRouteNodeId:
+      bestRoute.occupantNode.id,
+
+    endRouteNodeId:
+      bestRoute.exitNode.id,
   };
 }
 
-function createFallbackRoute(occupant, exit) {
-  const intermediatePoint =
-    createIntermediatePoint(occupant, exit);
+// ============================================================
+// FALLBACK
+// ============================================================
 
-  return [
-    {
-      x: occupant.x,
-      y: occupant.y,
-    },
-    intermediatePoint,
-    {
-      x: exit.x,
-      y: exit.y,
-    },
-  ];
+function createIntermediatePoint(
+  occupant,
+  exit
+) {
+  const horizontalDistance =
+    Math.abs(
+      exit.x - occupant.x
+    );
+
+  const verticalDistance =
+    Math.abs(
+      exit.y - occupant.y
+    );
+
+  if (
+    horizontalDistance >=
+    verticalDistance
+  ) {
+    return {
+      x: clampPercentage(exit.x),
+      y: clampPercentage(
+        occupant.y
+      ),
+    };
+  }
+
+  return {
+    x: clampPercentage(
+      occupant.x
+    ),
+    y: clampPercentage(exit.y),
+  };
 }
+
+function createFallbackRoute(
+  occupant,
+  exit,
+  calibration
+) {
+  const intermediatePoint =
+    createIntermediatePoint(
+      occupant,
+      exit
+    );
+
+  const totalDistance =
+    calculateDistanceMeters(
+      occupant,
+      intermediatePoint,
+      calibration.imageWidth,
+      calibration.imageHeight,
+      calibration.pixelsPerMeter
+    ) +
+    calculateDistanceMeters(
+      intermediatePoint,
+      exit,
+      calibration.imageWidth,
+      calibration.imageHeight,
+      calibration.pixelsPerMeter
+    );
+
+  return {
+    points: [
+      {
+        x: occupant.x,
+        y: occupant.y,
+      },
+
+      intermediatePoint,
+
+      {
+        x: exit.x,
+        y: exit.y,
+      },
+    ],
+
+    totalDistance:
+      totalDistance === null
+        ? null
+        : Number(
+            totalDistance.toFixed(2)
+          ),
+  };
+}
+
+// ============================================================
+// MAIN
+// ============================================================
 
 export function generateEvacuationRoutes(
   analysis,
   elements = [],
-  routeConnections = []
+  routeConnections = [],
+  floor = null
 ) {
   if (!analysis?.success) {
     return [];
   }
 
-  const routeNodes = elements.filter(
-    (element) =>
-      element.type === 'ROUTE_NODE'
-  );
+  const imageWidth =
+    Number(floor?.imageWidth);
+
+  const imageHeight =
+    Number(floor?.imageHeight);
+
+  const pixelsPerMeter =
+    Number(
+      floor?.pixelsPerMeter
+    );
+
+  const calibration = {
+    imageWidth,
+    imageHeight,
+    pixelsPerMeter,
+  };
+
+  /*
+   * Χωρίς calibration δεν μπορούμε
+   * να ισχυριστούμε ότι η απόσταση
+   * είναι πραγματικά σε μέτρα.
+   */
+  const hasValidCalibration =
+    Number.isFinite(imageWidth) &&
+    imageWidth > 0 &&
+    Number.isFinite(imageHeight) &&
+    imageHeight > 0 &&
+    Number.isFinite(pixelsPerMeter) &&
+    pixelsPerMeter > 0;
+
+  if (!hasValidCalibration) {
+    console.warn(
+      'TALOS: Evacuation routing skipped because floor calibration is incomplete.',
+      {
+        imageWidth,
+        imageHeight,
+        pixelsPerMeter,
+      }
+    );
+
+    return [];
+  }
+
+  const routeNodes =
+    elements.filter(
+      (element) =>
+        element.type === 'ROUTE_NODE'
+    );
+
+  const exits =
+    elements.filter(
+      (element) =>
+        element.type === 'EXIT'
+    );
 
   const hasConfiguredRouteGraph =
-  routeNodes.length > 0 &&
-  routeConnections.length > 0;
+    routeNodes.length > 0 &&
+    routeConnections.length > 0;
 
+  if (exits.length === 0) {
+    return [];
+  }
+
+  /*
+   * Πολύ σημαντικό:
+   *
+   * Δεν χρησιμοποιούμε πλέον
+   * recommendation.alternatives ως
+   * μοναδική λίστα εξόδων.
+   *
+   * Εξετάζουμε ΟΛΕΣ τις EXIT της κάτοψης.
+   */
   return analysis.recommendations
     .filter(
       (recommendation) =>
-        recommendation.action === 'EVACUATE' &&
-        recommendation.recommendedExit
+        recommendation.action ===
+        'EVACUATE'
     )
     .map((recommendation) => {
       const occupant =
         recommendation.occupant;
 
-      const candidateExits =
-        recommendation.alternatives?.length > 0
-          ? recommendation.alternatives
-          : recommendation.recommendedExit
-            ? [
-                {
-                  exit:
-                    recommendation.recommendedExit,
-                },
-              ]
-            : [];
-
-      if (candidateExits.length === 0) {
+      if (!occupant) {
         return null;
       }
 
       /*
-      * Αν υπάρχει Route Graph, δοκιμάζουμε
-      * κάθε ασφαλή έξοδο με σειρά score.
-      *
-      * Η πρώτη έξοδος που έχει πραγματικό
-      * fire-safe graph path επιλέγεται.
-      */
-      if (hasConfiguredRouteGraph) {
+       * ======================================================
+       * ROUTE GRAPH
+       * ======================================================
+       */
+
+      if (
+        hasConfiguredRouteGraph
+      ) {
         const graphCandidates = [];
 
         const rejectedRouteExits = [];
 
-        const originalExit =
-          candidateExits[0]?.exit ?? null;
-
-        for (const candidate of candidateExits) {
-          const exit = candidate.exit;
-
-          if (!exit) {
-            continue;
-          }
-
+        for (
+          const exit
+          of exits
+        ) {
           const graphRoute =
             createRouteUsingGraph({
               occupant,
               exit,
               routeNodes,
               routeConnections,
-              firePoint: analysis.firePoint,
+              firePoint:
+                analysis.firePoint,
+              calibration,
             });
 
           if (!graphRoute) {
@@ -652,7 +1069,8 @@ export function generateEvacuationRoutes(
                 exit.name?.trim() ||
                 'Έξοδος κινδύνου',
 
-              reason: 'NO_SAFE_GRAPH_PATH',
+              reason:
+                'NO_SAFE_GRAPH_PATH',
             });
 
             continue;
@@ -660,95 +1078,284 @@ export function generateEvacuationRoutes(
 
           graphCandidates.push({
             exit,
-            route: graphRoute,
+            route:
+              graphRoute,
           });
         }
 
-        if (graphCandidates.length === 0) {
-          return null;
+        if (
+          graphCandidates.length === 0
+        ) {
+          return {
+            id:
+              `route-${occupant.id}-no-safe-exit`,
+
+            occupantId:
+              occupant.id,
+
+            exitId: null,
+
+            occupantName:
+              occupant.name?.trim() ||
+              'Παρευρισκόμενος',
+
+            exitName: null,
+
+            routingMode:
+              'NO_SAFE_GRAPH_ROUTE',
+
+            totalDistance: null,
+
+            originalExitId:
+              recommendation
+                .recommendedExit?.id ??
+              null,
+
+            originalExitName:
+              recommendation
+                .recommendedExit?.name
+                ?.trim() || null,
+
+            usedAlternativeExit:
+              false,
+
+            rejectedRouteExits,
+
+            points: [],
+          };
         }
 
+        /*
+         * Η μικρότερη πραγματική
+         * ασφαλής διαδρομή κερδίζει.
+         */
         graphCandidates.sort(
-          (firstCandidate, secondCandidate) =>
-            firstCandidate.route.totalDistance -
-            secondCandidate.route.totalDistance
+          (
+            firstCandidate,
+            secondCandidate
+          ) =>
+            firstCandidate.route
+              .totalDistance -
+            secondCandidate.route
+              .totalDistance
         );
 
         const bestCandidate =
           graphCandidates[0];
 
+        const originalExit =
+          recommendation
+            .recommendedExit ??
+          null;
+
+        const usedAlternativeExit =
+          Boolean(
+            originalExit &&
+            bestCandidate.exit.id !==
+              originalExit.id
+          );
+
+        /*
+         * Οι υπόλοιπες ασφαλείς έξοδοι
+         * κρατούνται ως πραγματικές
+         * εναλλακτικές, ταξινομημένες
+         * κατά απόσταση.
+         */
+        const alternativeExits =
+          graphCandidates
+            .slice(1)
+            .map(
+              (candidate) => ({
+                exitId:
+                  candidate.exit.id,
+
+                exitName:
+                  candidate.exit.name
+                    ?.trim() ||
+                  'Έξοδος κινδύνου',
+
+                totalDistance:
+                  candidate.route
+                    .totalDistance,
+              })
+            );
+
         return {
-          id: `route-${occupant.id}-${bestCandidate.exit.id}`,
-          occupantId: occupant.id,
-          exitId: bestCandidate.exit.id,
+          id:
+            `route-${occupant.id}-${bestCandidate.exit.id}`,
+
+          occupantId:
+            occupant.id,
+
+          exitId:
+            bestCandidate.exit.id,
 
           occupantName:
             occupant.name?.trim() ||
             'Παρευρισκόμενος',
 
           exitName:
-            bestCandidate.exit.name?.trim() ||
+            bestCandidate.exit.name
+              ?.trim() ||
             'Έξοδος κινδύνου',
 
-          routingMode: 'ROUTE_GRAPH',
+          routingMode:
+            'ROUTE_GRAPH',
 
           totalDistance:
-            bestCandidate.route.totalDistance,
+            bestCandidate.route
+              .totalDistance,
 
           originalExitId:
-            originalExit?.id ?? null,
+            originalExit?.id ??
+            null,
 
           originalExitName:
             originalExit?.name?.trim() ||
             null,
 
-          usedAlternativeExit:
-            Boolean(
-              originalExit &&
-              bestCandidate.exit.id !== originalExit.id
-            ),
+          usedAlternativeExit,
+
+          startRouteNodeId:
+            bestCandidate.route
+              .startRouteNodeId,
+
+          endRouteNodeId:
+            bestCandidate.route
+              .endRouteNodeId,
+
+          alternativeExits,
 
           rejectedRouteExits,
 
           points:
-            bestCandidate.route.points,
+            bestCandidate.route
+              .points,
         };
       }
 
       /*
-      * Fallback επιτρέπεται μόνο σε όροφο
-      * χωρίς διαμορφωμένο Route Graph.
-      */
-      const exit =
-        candidateExits[0].exit;
+       * ======================================================
+       * FALLBACK
+       * ======================================================
+       *
+       * Αν δεν υπάρχει Route Graph,
+       * χρησιμοποιούμε όλες τις εξόδους
+       * και επιλέγουμε την πλησιέστερη.
+       */
 
-      if (!exit) {
+      const fallbackCandidates =
+        exits
+          .map((exit) => {
+            const route =
+              createFallbackRoute(
+                occupant,
+                exit,
+                calibration
+              );
+
+            if (
+              route.totalDistance === null
+            ) {
+              return null;
+            }
+
+            return {
+              exit,
+              route,
+            };
+          })
+          .filter(Boolean);
+
+      if (
+        fallbackCandidates.length === 0
+      ) {
         return null;
       }
 
-      const routePoints =
-        createFallbackRoute(
-          occupant,
-          exit
-        );
+      fallbackCandidates.sort(
+        (
+          firstCandidate,
+          secondCandidate
+        ) =>
+          firstCandidate.route
+            .totalDistance -
+          secondCandidate.route
+            .totalDistance
+      );
+
+      const bestFallback =
+        fallbackCandidates[0];
+
+      const originalExit =
+        recommendation
+          .recommendedExit ??
+        null;
 
       return {
-        id: `route-${occupant.id}-${exit.id}`,
-        occupantId: occupant.id,
-        exitId: exit.id,
+        id:
+          `route-${occupant.id}-${bestFallback.exit.id}`,
+
+        occupantId:
+          occupant.id,
+
+        exitId:
+          bestFallback.exit.id,
 
         occupantName:
           occupant.name?.trim() ||
           'Παρευρισκόμενος',
 
         exitName:
-          exit.name?.trim() ||
+          bestFallback.exit.name?.trim() ||
           'Έξοδος κινδύνου',
 
-        routingMode: 'FALLBACK',
+        routingMode:
+          'FALLBACK',
 
-        points: routePoints,
+        totalDistance:
+          bestFallback.route
+            .totalDistance,
+
+        originalExitId:
+          originalExit?.id ??
+          null,
+
+        originalExitName:
+          originalExit?.name?.trim() ||
+          null,
+
+        usedAlternativeExit:
+          Boolean(
+            originalExit &&
+            bestFallback.exit.id !==
+              originalExit.id
+          ),
+
+        alternativeExits:
+          fallbackCandidates
+            .slice(1)
+            .map(
+              (candidate) => ({
+                exitId:
+                  candidate.exit.id,
+
+                exitName:
+                  candidate.exit.name
+                    ?.trim() ||
+                  'Έξοδος κινδύνου',
+
+                totalDistance:
+                  candidate.route
+                    .totalDistance,
+              })
+            ),
+
+        rejectedRouteExits: [],
+
+        points:
+          bestFallback.route.points,
       };
     })
     .filter(Boolean);
-    }
+}

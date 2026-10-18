@@ -87,6 +87,12 @@ function FloorPlanEditorPage() {
   const [pendingRouteNodeId, setPendingRouteNodeId] =
     useState(null);
 
+  const [imageDimensions, setImageDimensions] =
+  useState({
+    width: 0,
+    height: 0,
+  });
+
   useEffect(() => {
     const loadBackendData = async () => {
       try {
@@ -186,11 +192,24 @@ const handleRunEvacuationAnalysis = () => {
     result.firePoint
   );
 
+  if (
+    !imageDimensions.width ||
+    !imageDimensions.height ||
+    !backendFloor?.pixelsPerMeter
+  ) {
+    return;
+  }
+
   const generatedRoutes =
     generateEvacuationRoutes(
       result,
       elements,
-      routeConnections
+      routeConnections,
+      {
+        ...backendFloor,
+        imageWidth: imageDimensions.width,
+        imageHeight: imageDimensions.height,
+      }
     );
 
 
@@ -712,6 +731,7 @@ const handleRunEvacuationAnalysis = () => {
           onRouteNodeConnect={handleRouteNodeConnect}
           onCalibrationComplete={handleCalibrationComplete}
           fireBlockedRouteElements={fireBlockedRouteElements}
+          onImageDimensionsChange={setImageDimensions}
         />
 
         <FloorElementProperties

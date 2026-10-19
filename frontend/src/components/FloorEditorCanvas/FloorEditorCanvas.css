@@ -57,7 +57,7 @@
 .floor-editor-image-stage {
   position: relative;
   width: fit-content;
-  min-width: 600px;
+  min-width: 0px;
   margin: 0 auto;
   -webkit-user-select: none;
   user-select: none;
@@ -495,4 +495,31 @@
 .floor-wall--selected {
   stroke: #dc2626;
   stroke-width: 7px;
+}
+
+/* WALL selection */
+.floor-editor-image-stage--selection .floor-wall {
+  pointer-events: stroke;
+  cursor: pointer;
+}
+
+.floor-editor-image-stage--selection .floor-wall:hover {
+  stroke: #2563eb;
+  stroke-width: 7px;
+}
+
+.floor-editor-image-stage--selection .floor-wall--selected {
+  stroke: #dc2626;
+  stroke-width: 7px;
+}
+
+/* WALL deletion */
+.floor-editor-image-stage--delete .floor-wall {
+  pointer-events: stroke;
+  cursor: pointer;
+}
+
+.floor-editor-image-stage--delete .floor-wall:hover {
+  stroke: #dc2626;
+  stroke-width: 8px;
 }

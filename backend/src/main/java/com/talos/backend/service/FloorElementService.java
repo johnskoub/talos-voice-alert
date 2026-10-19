@@ -26,8 +26,19 @@ public class FloorElementService {
                 ));
     }
 
-    public FloorElement createElement(Long floorId, FloorElement floorElement) {
+    public FloorElement createElement(
+            Long floorId,
+            FloorElement floorElement
+    ) {
         floorElement.setFloorId(floorId);
+
+        if ("WALL".equals(floorElement.getType())) {
+
+            floorElement.setX(floorElement.getStartX());
+            floorElement.setY(floorElement.getStartY());
+
+        }
+
         return floorElementRepository.save(floorElement);
     }
 
@@ -43,6 +54,14 @@ public class FloorElementService {
         existingElement.setY(updatedElement.getY());
         existingElement.setWidth(updatedElement.getWidth());
         existingElement.setHeight(updatedElement.getHeight());
+        existingElement.setStartX(updatedElement.getStartX());
+        existingElement.setStartY(updatedElement.getStartY());
+        if ("WALL".equals(updatedElement.getType())) {
+            existingElement.setX(updatedElement.getStartX());
+            existingElement.setY(updatedElement.getStartY());
+        }
+        existingElement.setEndX(updatedElement.getEndX());
+        existingElement.setEndY(updatedElement.getEndY());
         existingElement.setSide(updatedElement.getSide());
         existingElement.setStatus(updatedElement.getStatus());
         existingElement.setCategory(updatedElement.getCategory());

@@ -34,6 +34,22 @@ public class FloorElement {
     @Column(precision = 6, scale = 3)
     private BigDecimal height;
 
+    // ================================
+    // WALL COORDINATES
+    // ================================
+
+    @Column(name = "start_x", precision = 6, scale = 3)
+    private BigDecimal startX;
+
+    @Column(name = "start_y", precision = 6, scale = 3)
+    private BigDecimal startY;
+
+    @Column(name = "end_x", precision = 6, scale = 3)
+    private BigDecimal endX;
+
+    @Column(name = "end_y", precision = 6, scale = 3)
+    private BigDecimal endY;
+
     @Column(length = 20)
     private String side;
 
@@ -126,6 +142,42 @@ public class FloorElement {
 
     public void setHeight(BigDecimal height) {
         this.height = height;
+    }
+
+    // ================================
+    // WALL COORDINATES GETTERS/SETTERS
+    // ================================
+
+    public BigDecimal getStartX() {
+        return startX;
+    }
+
+    public void setStartX(BigDecimal startX) {
+        this.startX = startX;
+    }
+
+    public BigDecimal getStartY() {
+        return startY;
+    }
+
+    public void setStartY(BigDecimal startY) {
+        this.startY = startY;
+    }
+
+    public BigDecimal getEndX() {
+        return endX;
+    }
+
+    public void setEndX(BigDecimal endX) {
+        this.endX = endX;
+    }
+
+    public BigDecimal getEndY() {
+        return endY;
+    }
+
+    public void setEndY(BigDecimal endY) {
+        this.endY = endY;
     }
 
     public String getSide() {

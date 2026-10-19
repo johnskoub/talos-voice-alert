@@ -194,6 +194,144 @@ function calculatePointToSegmentDistanceMeters(
 }
 
 // ============================================================
+// WALL COLLISION
+// ============================================================
+
+const WALL_CLEARANCE_PERCENT = 0.35;
+
+function orientation(firstPoint, secondPoint, thirdPoint) {
+  const value =
+    (secondPoint.y - firstPoint.y) *
+      (thirdPoint.x - secondPoint.x) -
+    (secondPoint.x - firstPoint.x) *
+      (thirdPoint.y - secondPoint.y);
+
+  if (Math.abs(value) < 0.000001) {
+    return 0;
+  }
+
+  return value > 0 ? 1 : 2;
+}
+
+function onSegment(firstPoint, secondPoint, point) {
+  return (
+    point.x >=
+      Math.min(firstPoint.x, secondPoint.x) -
+        WALL_CLEARANCE_PERCENT &&
+    point.x <=
+      Math.max(firstPoint.x, secondPoint.x) +
+        WALL_CLEARANCE_PERCENT &&
+    point.y >=
+      Math.min(firstPoint.y, secondPoint.y) -
+        WALL_CLEARANCE_PERCENT &&
+    point.y <=
+      Math.max(firstPoint.y, secondPoint.y) +
+        WALL_CLEARANCE_PERCENT
+  );
+}
+
+function segmentsIntersect(
+  firstStart,
+  firstEnd,
+  secondStart,
+  secondEnd
+) {
+  const firstOrientation = orientation(
+    firstStart,
+    firstEnd,
+    secondStart
+  );
+
+  const secondOrientation = orientation(
+    firstStart,
+    firstEnd,
+    secondEnd
+  );
+
+  const thirdOrientation = orientation(
+    secondStart,
+    secondEnd,
+    firstStart
+  );
+
+  const fourthOrientation = orientation(
+    secondStart,
+    secondEnd,
+    firstEnd
+  );
+
+  if (
+    firstOrientation !== secondOrientation &&
+    thirdOrientation !== fourthOrientation
+  ) {
+    return true;
+  }
+
+  if (
+    firstOrientation === 0 &&
+    onSegment(firstStart, firstEnd, secondStart)
+  ) {
+    return true;
+  }
+
+  if (
+    secondOrientation === 0 &&
+    onSegment(firstStart, firstEnd, secondEnd)
+  ) {
+    return true;
+  }
+
+  if (
+    thirdOrientation === 0 &&
+    onSegment(secondStart, secondEnd, firstStart)
+  ) {
+    return true;
+  }
+
+  if (
+    fourthOrientation === 0 &&
+    onSegment(secondStart, secondEnd, firstEnd)
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
+function isRouteSegmentBlockedByWall(
+  firstPoint,
+  secondPoint,
+  walls
+) {
+  if (!firstPoint || !secondPoint || walls.length === 0) {
+    return false;
+  }
+
+  return walls.some((wall) => {
+    if (wall.type !== 'WALL') {
+      return false;
+    }
+
+    const wallStart = {
+      x: Number(wall.startX),
+      y: Number(wall.startY),
+    };
+
+    const wallEnd = {
+      x: Number(wall.endX),
+      y: Number(wall.endY),
+    };
+
+    return segmentsIntersect(
+      firstPoint,
+      secondPoint,
+      wallStart,
+      wallEnd
+    );
+  });
+}
+
+// ============================================================
 // FIRE DISTANCES — ALL IN METERS
 // ============================================================
 
@@ -372,7 +510,8 @@ function buildRouteGraph(
   routeNodes,
   routeConnections,
   firePoint,
-  calibration
+  calibration,
+  walls = []
 ) {
   const graph = new Map();
 
@@ -399,9 +538,28 @@ function buildRouteGraph(
           connection,
           nodeById,
           firePoint,
-          calibration,
+          calibration
         })
     )
+    .filter((connection) => {
+      const fromNode = nodeById.get(
+        connection.fromNodeId
+      );
+
+      const toNode = nodeById.get(
+        connection.toNodeId
+      );
+
+      if (!fromNode || !toNode) {
+        return false;
+      }
+
+      return !isRouteSegmentBlockedByWall(
+        fromNode,
+        toNode,
+        walls
+      );
+    })
     .forEach((connection) => {
       const fromNode =
         nodeById.get(
@@ -644,6 +802,7 @@ function createRouteUsingGraph({
   routeConnections,
   firePoint,
   calibration,
+  walls = [],
 }) {
   const availableRouteNodes =
     routeNodes.filter(
@@ -682,7 +841,8 @@ function createRouteUsingGraph({
       availableRouteNodes,
       routeConnections,
       firePoint,
-      calibration
+      calibration,
+      walls
     );
 
   let bestRoute = null;
@@ -706,6 +866,13 @@ function createRouteUsingGraph({
       continue;
     }
 
+    const occupantConnectionBlockedByWall =
+      isRouteSegmentBlockedByWall(
+        occupant,
+        occupantNode,
+        walls
+      );
+
     const occupantConnectionBlockedByFire =
       firePoint &&
       calculatePointToSegmentDistanceMeters(
@@ -719,7 +886,8 @@ function createRouteUsingGraph({
         FIRE_NODE_BLOCKING_DISTANCE_METERS;
 
     if (
-      occupantConnectionBlockedByFire
+      occupantConnectionBlockedByFire ||
+      occupantConnectionBlockedByWall
     ) {
       continue;
     }
@@ -755,8 +923,16 @@ function createRouteUsingGraph({
         ) <
           FIRE_EXIT_APPROACH_DISTANCE_METERS;
 
+      const exitConnectionBlockedByWall =
+        isRouteSegmentBlockedByWall(
+          exitNode,
+          exit,
+          walls
+        );
+
       if (
-        exitConnectionBlockedByFire
+        exitConnectionBlockedByFire ||
+        exitConnectionBlockedByWall
       ) {
         continue;
       }
@@ -995,6 +1171,13 @@ export function generateEvacuationRoutes(
       (element) =>
         element.type === 'ROUTE_NODE'
     );
+  
+  const walls =
+    elements.filter(
+      (element) =>
+        element.type === 'WALL' &&
+        element.status !== 'BLOCKED'
+    );
 
   const exits =
     elements.filter(
@@ -1059,6 +1242,7 @@ export function generateEvacuationRoutes(
               firePoint:
                 analysis.firePoint,
               calibration,
+              walls,
             });
 
           if (!graphRoute) {

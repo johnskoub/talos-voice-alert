@@ -402,10 +402,16 @@ function FloorEditorCanvas({
     event.currentTarget.setPointerCapture(event.pointerId);
   };
 
+  
+
   const handleWallPointerMove = (event) => {
     if (activeTool !== 'WALL' || !draftWall) {
       return;
     }
+
+    if (!isPointerInsideImage(event)) {
+    return;
+  }
 
     event.preventDefault();
     event.stopPropagation();
@@ -863,24 +869,6 @@ const handleZoneResizePointerUp = (event, zoneId) => {
         </div>
       </div>
 
-      // Εμφάνιση προσωρινού τοίχου όταν σχεδιάζεται
-      {draftWall && (
-        <svg
-          className="floor-walls-layer"
-          viewBox="0 0 100 100"
-          preserveAspectRatio="none"
-          aria-hidden="true"
-        >
-          <line
-            className="floor-wall floor-wall--draft"
-            x1={draftWall.startX}
-            y1={draftWall.startY}
-            x2={draftWall.endX}
-            y2={draftWall.endY}
-          />
-        </svg>
-      )}
-
       <div className="floor-editor-workspace">
         <div
           className={`floor-editor-image-stage ${
@@ -894,6 +882,10 @@ const handleZoneResizePointerUp = (event, zoneId) => {
           } ${
             activeTool === 'ZONE'
               ? 'floor-editor-image-stage--zone'
+              : ''
+          } ${
+            activeTool === 'DELETE'
+              ? 'floor-editor-image-stage--delete'
               : ''
           }`}
           onClick={handleCanvasClick}
@@ -947,6 +939,24 @@ const handleZoneResizePointerUp = (event, zoneId) => {
               }
             }}
           />
+
+          // Εμφάνιση προσωρινού τοίχου όταν σχεδιάζεται
+          {draftWall && (
+            <svg
+              className="floor-walls-layer"
+              viewBox="0 0 100 100"
+              preserveAspectRatio="none"
+              aria-hidden="true"
+            >
+              <line
+                className="floor-wall floor-wall--draft"
+                x1={draftWall.startX}
+                y1={draftWall.startY}
+                x2={draftWall.endX}
+                y2={draftWall.endY}
+              />
+            </svg>
+          )}
 
           {activeTool === 'CALIBRATION' &&
             calibrationPoints.map((point, index) => (
@@ -1116,6 +1126,25 @@ const handleZoneResizePointerUp = (event, zoneId) => {
                         ? 'floor-wall--selected'
                         : ''
                     }`}
+                    onClick={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+
+                      if (activeTool === 'DELETE') {
+                        onElementsChange(
+                          elements.filter(
+                            (element) => element.id !== wall.id
+                          )
+                        );
+
+                        onElementSelect(null);
+                        return;
+                      }
+
+                      if (activeTool === 'SELECT') {
+                        onElementSelect(wall.id);
+                      }
+                    }}
                   />
                 );
               })}

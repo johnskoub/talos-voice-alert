@@ -1,9 +1,46 @@
 import { NavLink } from 'react-router';
 import './Sidebar.css';
 
+const menuItems = [
+  {
+    to: '/dashboard',
+    icon: '⌂',
+    label: 'Dashboard',
+  },
+  {
+    to: '/companies',
+    icon: '▦',
+    label: 'Επιχειρήσεις',
+  },
+  {
+    to: '/occupants',
+    icon: '♙',
+    label: 'Παρευρισκόμενοι',
+  },
+  {
+    to: '/simulations',
+    icon: '⚠',
+    label: 'Προσομοιώσεις',
+  },
+  {
+    to: '/settings',
+    icon: '⚙',
+    label: 'Ρυθμίσεις',
+  },
+  {
+    to: '/incidents',
+    icon: '◉',
+    label: 'Συμβάντα & Ιστορικό',
+  },
+];
+
 function Sidebar({ isOpen }) {
   return (
-    <aside className={`sidebar ${isOpen ? 'sidebar--open' : ''}`}>
+    <aside
+      className={`sidebar ${
+        isOpen ? 'sidebar--open' : ''
+      }`}
+    >
       <div className="sidebar-header">
         <div className="sidebar-logo-mark">T</div>
 
@@ -13,36 +50,29 @@ function Sidebar({ isOpen }) {
         </div>
       </div>
 
-      <nav className="sidebar-navigation" aria-label="Κύρια πλοήγηση">
-        <NavLink
-          to="/dashboard"
-          className={({ isActive }) =>
-            `sidebar-link ${isActive ? 'sidebar-link--active' : ''}`
-          }
-        >
-          <span className="sidebar-link-icon">⌂</span>
-          Dashboard
-        </NavLink>
+      <nav
+        className="sidebar-navigation"
+        aria-label="Κύρια πλοήγηση"
+      >
+        {menuItems.map((item) => (
+          <NavLink
+            key={item.to}
+            to={item.to}
+            className={({ isActive }) =>
+              `sidebar-link ${
+                isActive
+                  ? 'sidebar-link--active'
+                  : ''
+              }`
+            }
+          >
+            <span className="sidebar-link-icon">
+              {item.icon}
+            </span>
 
-        <button className="sidebar-link" type="button">
-          <span className="sidebar-link-icon">▦</span>
-          Επιχειρήσεις
-        </button>
-
-        <button className="sidebar-link" type="button">
-          <span className="sidebar-link-icon">♙</span>
-          Παρευρισκόμενοι
-        </button>
-
-        <button className="sidebar-link" type="button">
-          <span className="sidebar-link-icon">⚠</span>
-          Προσομοιώσεις
-        </button>
-
-        <button className="sidebar-link" type="button">
-          <span className="sidebar-link-icon">⚙</span>
-          Ρυθμίσεις
-        </button>
+            {item.label}
+          </NavLink>
+        ))}
       </nav>
 
       <div className="sidebar-footer">

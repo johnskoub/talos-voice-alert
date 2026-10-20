@@ -12,6 +12,10 @@ public class Company {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    // ================================
+    // BASIC COMPANY INFORMATION
+    // ================================
+
     @Column(nullable = false, length = 150)
     private String name;
 
@@ -30,6 +34,52 @@ public class Company {
     @Column(length = 255)
     private String address;
 
+    @Column(name = "logo_url", length = 500)
+    private String logoUrl;
+
+    @Column(name = "floors")
+    private Integer floors;
+
+    // ================================
+    // PRESIDENT
+    // ================================
+
+    @Column(name = "president_name", length = 150)
+    private String presidentName;
+
+    @Column(name = "president_phone", length = 50)
+    private String presidentPhone;
+
+    @Column(name = "president_email", length = 255)
+    private String presidentEmail;
+
+    // ================================
+    // VICE PRESIDENT
+    // ================================
+
+    @Column(name = "vice_president_name", length = 150)
+    private String vicePresidentName;
+
+    @Column(name = "vice_president_phone", length = 50)
+    private String vicePresidentPhone;
+
+    @Column(name = "vice_president_email", length = 255)
+    private String vicePresidentEmail;
+
+    // ================================
+    // SECURITY TEAM
+    // ================================
+
+    @Column(name = "security_team", length = 255)
+    private String securityTeam;
+
+    @Column(name = "security_phone", length = 50)
+    private String securityPhone;
+
+    // ================================
+    // SYSTEM FIELDS
+    // ================================
+
     @Column(name = "is_active", nullable = false)
     private Boolean active = true;
 
@@ -41,6 +91,10 @@ public class Company {
 
     public Company() {
     }
+
+    // ================================
+    // GETTERS / SETTERS
+    // ================================
 
     public Long getId() {
         return id;
@@ -96,6 +150,86 @@ public class Company {
 
     public void setAddress(String address) {
         this.address = address;
+    }
+
+    public String getLogoUrl() {
+        return logoUrl;
+    }
+
+    public void setLogoUrl(String logoUrl) {
+        this.logoUrl = logoUrl;
+    }
+
+    public Integer getFloors() {
+        return floors;
+    }
+
+    public void setFloors(Integer floors) {
+        this.floors = floors;
+    }
+
+    public String getPresidentName() {
+        return presidentName;
+    }
+
+    public void setPresidentName(String presidentName) {
+        this.presidentName = presidentName;
+    }
+
+    public String getPresidentPhone() {
+        return presidentPhone;
+    }
+
+    public void setPresidentPhone(String presidentPhone) {
+        this.presidentPhone = presidentPhone;
+    }
+
+    public String getPresidentEmail() {
+        return presidentEmail;
+    }
+
+    public void setPresidentEmail(String presidentEmail) {
+        this.presidentEmail = presidentEmail;
+    }
+
+    public String getVicePresidentName() {
+        return vicePresidentName;
+    }
+
+    public void setVicePresidentName(String vicePresidentName) {
+        this.vicePresidentName = vicePresidentName;
+    }
+
+    public String getVicePresidentPhone() {
+        return vicePresidentPhone;
+    }
+
+    public void setVicePresidentPhone(String vicePresidentPhone) {
+        this.vicePresidentPhone = vicePresidentPhone;
+    }
+
+    public String getVicePresidentEmail() {
+        return vicePresidentEmail;
+    }
+
+    public void setVicePresidentEmail(String vicePresidentEmail) {
+        this.vicePresidentEmail = vicePresidentEmail;
+    }
+
+    public String getSecurityTeam() {
+        return securityTeam;
+    }
+
+    public void setSecurityTeam(String securityTeam) {
+        this.securityTeam = securityTeam;
+    }
+
+    public String getSecurityPhone() {
+        return securityPhone;
+    }
+
+    public void setSecurityPhone(String securityPhone) {
+        this.securityPhone = securityPhone;
     }
 
     public Boolean getActive() {

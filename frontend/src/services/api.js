@@ -171,3 +171,153 @@ export async function deleteRouteConnection(
 
   return handleResponse(response);
 }
+
+// ================================
+// COMPANIES
+// ================================
+
+export async function getCompanies() {
+  const response = await fetch(
+    `${API_BASE_URL}/companies`
+  );
+
+  return handleResponse(response);
+}
+
+export async function getCompany(companyId) {
+  const response = await fetch(
+    `${API_BASE_URL}/companies/${companyId}`
+  );
+
+  return handleResponse(response);
+}
+
+export async function createCompany(company) {
+  const response = await fetch(
+    `${API_BASE_URL}/companies`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(company),
+    }
+  );
+
+  return handleResponse(response);
+}
+
+export async function updateCompany(
+  companyId,
+  company
+) {
+  const response = await fetch(
+    `${API_BASE_URL}/companies/${companyId}`,
+    {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(company),
+    }
+  );
+
+  return handleResponse(response);
+}
+
+export async function deleteCompany(companyId) {
+  const response = await fetch(
+    `${API_BASE_URL}/companies/${companyId}`,
+    {
+      method: 'DELETE',
+    }
+  );
+
+  return handleResponse(response);
+}
+
+// ================================
+// COMPANY USERS
+// ================================
+
+export async function getCompanyUsers(companyId) {
+  const response = await fetch(
+    `${API_BASE_URL}/company-users/company/${companyId}`
+  );
+
+  return handleResponse(response);
+}
+
+export async function getCompanyUser(companyUserId) {
+  const response = await fetch(
+    `${API_BASE_URL}/company-users/${companyUserId}`
+  );
+
+  return handleResponse(response);
+}
+
+export async function createCompanyUser(companyUser) {
+  const response = await fetch(
+    `${API_BASE_URL}/company-users`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(companyUser),
+    }
+  );
+
+  return handleResponse(response);
+}
+
+export async function updateCompanyUser(
+  companyUserId,
+  companyUser
+) {
+  const response = await fetch(
+    `${API_BASE_URL}/company-users/${companyUserId}`,
+    {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(companyUser),
+    }
+  );
+
+  return handleResponse(response);
+}
+
+export async function deleteCompanyUser(
+  companyUserId
+) {
+  const response = await fetch(
+    `${API_BASE_URL}/company-users/${companyUserId}`,
+    {
+      method: 'DELETE',
+    }
+  );
+
+  return handleResponse(response);
+}
+
+// ================================
+// USERS
+// ================================
+
+export async function getUsers() {
+  const response = await fetch(
+    `${API_BASE_URL}/users`
+  );
+
+  return handleResponse(response);
+}
+
+export async function getUser(userId) {
+  const response = await fetch(
+    `${API_BASE_URL}/users/${userId}`
+  );
+
+  return handleResponse(response);
+}

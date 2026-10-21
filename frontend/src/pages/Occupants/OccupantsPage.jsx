@@ -6,6 +6,8 @@ import {
   getCompanyUsers,
   getUsers,
   createCompanyUser,
+  updateCompanyUser,
+  deleteCompanyUser,
 } from '../../services/api';
 import './OccupantsPage.css';
 
@@ -34,6 +36,17 @@ function OccupantsPage() {
   const [savingOccupant, setSavingOccupant] =
     useState(false);
 
+  const [isEditModalOpen, setIsEditModalOpen] =
+    useState(false);
+
+  const [editingOccupant, setEditingOccupant] =
+    useState(null);
+
+  const [editRole, setEditRole] =
+    useState('EMPLOYEE');
+
+  const [savingEdit, setSavingEdit] =
+    useState(false);
 
   useEffect(() => {
     async function loadData() {
@@ -157,6 +170,51 @@ function OccupantsPage() {
         );
     } finally {
         setSavingOccupant(false);
+    }
+  };
+
+  const handleEditOccupant = async (event) => {
+    event.preventDefault();
+
+    if (!editingOccupant) {
+      return;
+    }
+
+    try {
+      setSavingEdit(true);
+      setError('');
+
+      await updateCompanyUser(
+        editingOccupant.id,
+        {
+          companyId: Number(
+            editingOccupant.companyId
+          ),
+          userId: Number(
+            editingOccupant.userId
+          ),
+          role: editRole,
+          active: true,
+        }
+      );
+
+      const updatedCompanyUsers =
+        await getCompanyUsers(selectedCompanyId);
+
+      setCompanyUsers(updatedCompanyUsers);
+
+      setIsEditModalOpen(false);
+      setEditingOccupant(null);
+      setEditRole('EMPLOYEE');
+
+    } catch (err) {
+      console.error(err);
+
+      setError(
+        'Δεν ήταν δυνατή η ενημέρωση του παρευρισκόμενου.'
+      );
+    } finally {
+      setSavingEdit(false);
     }
   };
 
@@ -440,6 +498,11 @@ function OccupantsPage() {
                             <button
                               type="button"
                               className="edit-occupant-button"
+                              onClick={() => {
+                                setEditingOccupant(occupant);
+                                setEditRole(occupant.role);
+                                setIsEditModalOpen(true);
+                              }}
                             >
                               Επεξεργασία
                             </button>
@@ -447,6 +510,30 @@ function OccupantsPage() {
                             <button
                               type="button"
                               className="delete-occupant-button"
+                              onClick={async () => {
+                                const confirmed = window.confirm(
+                                  `Θέλετε να αφαιρέσετε τον ${occupant.user.firstName} ${occupant.user.lastName} από την επιχείρηση;`
+                                );
+
+                                if (!confirmed) {
+                                  return;
+                                }
+
+                                try {
+                                  await deleteCompanyUser(occupant.id);
+
+                                  setCompanyUsers((current) =>
+                                    current.filter(
+                                      (item) => item.id !== occupant.id
+                                    )
+                                  );
+                                } catch (err) {
+                                  console.error(err);
+                                  setError(
+                                    'Δεν ήταν δυνατή η αφαίρεση του παρευρισκόμενου.'
+                                  );
+                                }
+                              }}
                             >
                               Αφαίρεση
                             </button>
@@ -466,7 +553,7 @@ function OccupantsPage() {
             className="occupant-modal-overlay"
             onClick={() => setIsAddModalOpen(false)}
         >
-            <div
+          <div
             className="occupant-modal"
             onClick={(event) => event.stopPropagation()}
             >
@@ -588,9 +675,127 @@ function OccupantsPage() {
                 </div>
 
             </form>
-            </div>
+          </div>
         </div>
-        )}
+      )}
+
+      {isEditModalOpen && editingOccupant && (
+        <div
+          className="occupant-modal-overlay"
+          onClick={() => {
+            setIsEditModalOpen(false);
+            setEditingOccupant(null);
+          }}
+        >
+          <div
+            className="occupant-modal"
+            onClick={(event) =>
+              event.stopPropagation()
+            }
+          >
+            <div className="occupant-modal-header">
+              <div>
+                <p className="occupants-eyebrow">
+                  EDIT OCCUPANT
+                </p>
+
+                <h3>
+                  Επεξεργασία παρευρισκόμενου
+                </h3>
+
+                <p>
+                  Τροποποιήστε τον ρόλο του
+                  παρευρισκόμενου.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                className="occupant-modal-close"
+                onClick={() => {
+                  setIsEditModalOpen(false);
+                  setEditingOccupant(null);
+                }}
+              >
+                ×
+              </button>
+            </div>
+
+            <form onSubmit={handleEditOccupant}>
+
+              <div className="occupant-form-group">
+                <label>
+                  Χρήστης
+                </label>
+
+                <input
+                  type="text"
+                  value={
+                    editingOccupant.user
+                      ? `${editingOccupant.user.firstName || ''} ${editingOccupant.user.lastName || ''} — ${editingOccupant.user.username}`
+                      : ''
+                  }
+                  disabled
+                />
+              </div>
+
+              <div className="occupant-form-group">
+                <label htmlFor="edit-occupant-role">
+                  Ρόλος
+                </label>
+
+                <select
+                  id="edit-occupant-role"
+                  value={editRole}
+                  onChange={(event) =>
+                    setEditRole(event.target.value)
+                  }
+                >
+                  <option value="EMPLOYEE">
+                    Employee
+                  </option>
+
+                  <option value="MANAGER">
+                    Manager
+                  </option>
+
+                  <option value="SECURITY">
+                    Security
+                  </option>
+
+                  <option value="ADMIN">
+                    Administrator
+                  </option>
+                </select>
+              </div>
+
+              <div className="occupant-modal-actions">
+                <button
+                  type="button"
+                  className="occupant-cancel-button"
+                  onClick={() => {
+                    setIsEditModalOpen(false);
+                    setEditingOccupant(null);
+                  }}
+                >
+                  Ακύρωση
+                </button>
+
+                <button
+                  type="submit"
+                  className="occupant-save-button"
+                  disabled={savingEdit}
+                >
+                  {savingEdit
+                    ? 'Αποθήκευση...'
+                    : 'Αποθήκευση'}
+                </button>
+              </div>
+
+            </form>
+          </div>
+        </div>
+      )}
 
     </PageContainer>
   );

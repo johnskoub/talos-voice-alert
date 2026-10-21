@@ -2,6 +2,18 @@
   box-sizing: border-box;
 }
 
+:root {
+  --bg-primary: #f0f4f8;
+  --bg-secondary: #ffffff;
+  --bg-card: #ffffff;
+  --text-primary: #0f172a;
+  --text-secondary: #64748b;
+  --border-color: #dbe3ec;
+  --input-bg: #ffffff;
+  --header-bg: #ffffff;
+  --button-bg: #ffffff;
+}
+
 html {
   scroll-behavior: smooth;
 }
@@ -9,8 +21,23 @@ html {
 body {
   margin: 0;
   font-family: Arial, Helvetica, sans-serif;
-  background: #0f172a;
-  color: #0f172a;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  transition:
+    background-color 0.25s ease,
+    color 0.25s ease;
+}
+
+body.dark-theme {
+  --bg-primary: #0f172a;
+  --bg-secondary: #111827;
+  --bg-card: #1e293b;
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --border-color: #334155;
+  --input-bg: #1e293b;
+  --header-bg: #111827;
+  --button-bg: #1e293b;
 }
 
 img {
@@ -18,9 +45,22 @@ img {
 }
 
 button,
-input {
+input,
+select,
+textarea {
   font: inherit;
 }
+
+button,
+input,
+select,
+textarea {
+  transition:
+    background-color 0.25s ease,
+    color 0.25s ease,
+    border-color 0.25s ease;
+}
+
 .app {
   min-height: 100vh;
   padding: 40px;

@@ -7,61 +7,65 @@ import FloorDetailsPage from './pages/FloorDetails/FloorDetailsPage';
 import FloorPlanEditorPage from './pages/FloorPlanEditor/FloorPlanEditorPage';
 import CompaniesPage from './pages/Companies/CompaniesPage';
 import OccupantsPage from './pages/Occupants/OccupantsPage';
+import SettingsPage from './pages/Settings/SettingsPage';
+import { LanguageProvider } from './context/LanguageContext';
 import './styles/global.css';
 
 function App() {
   return (
-    <Routes>
-      <Route path="/" element={<Navigate to="/sign-in" replace />} />
+    <LanguageProvider>
+      <Routes>
+        <Route path="/" element={<Navigate to="/sign-in" replace />} />
 
-      <Route path="/sign-in" element={<LoginPage />} />
+        <Route path="/sign-in" element={<LoginPage />} />
 
-      <Route element={<DashboardLayout />}>
+        <Route element={<DashboardLayout />}>
 
-        <Route
-          path="/dashboard"
-          element={<DashboardPage />}
-        />
+          <Route
+            path="/dashboard"
+            element={<DashboardPage />}
+          />
 
-        <Route
-          path="/companies"
-          element={<CompaniesPage />}
-        />
+          <Route
+            path="/companies"
+            element={<CompaniesPage />}
+          />
 
-        <Route
-          path="/companies/:companyId"
-          element={<CompanyDetailsPage />}
-        />
+          <Route
+            path="/companies/:companyId"
+            element={<CompanyDetailsPage />}
+          />
 
-        <Route
-          path="/companies/:companyId/floors/:floorId"
-          element={<FloorDetailsPage />}
-        />
+          <Route
+            path="/companies/:companyId/floors/:floorId"
+            element={<FloorDetailsPage />}
+          />
 
-        <Route
-          path="/companies/:companyId/floors/:floorId/editor"
-          element={<FloorPlanEditorPage />}
-        />
+          <Route
+            path="/companies/:companyId/floors/:floorId/editor"
+            element={<FloorPlanEditorPage />}
+          />
 
-        <Route
-          path="/occupants"
-          element={<OccupantsPage />}
-        />
+          <Route
+            path="/occupants"
+            element={<OccupantsPage />}
+          />
 
-        <Route
-          path="/settings"
-          element={<div>Ρυθμίσεις</div>}
-        />
+          <Route
+            path="/settings"
+            element={<SettingsPage />}
+          />
 
-        <Route
-          path="/incidents"
-          element={<div>Συμβάντα & Ιστορικό</div>}
-        />
+          <Route
+            path="/incidents"
+            element={<div>Συμβάντα & Ιστορικό</div>}
+          />
 
-      </Route>
+        </Route>
 
-      <Route path="*" element={<Navigate to="/sign-in" replace />} />
-    </Routes>
+        <Route path="*" element={<Navigate to="/sign-in" replace />} />
+      </Routes>
+    </LanguageProvider>
   );
 }
 

@@ -1,35 +1,37 @@
 import { NavLink } from 'react-router';
+import { useLanguage } from '../../context/LanguageContext';
 import './Sidebar.css';
 
-const menuItems = [
-  {
-    to: '/dashboard',
-    icon: '⌂',
-    label: 'Dashboard',
-  },
-  {
-    to: '/companies',
-    icon: '▦',
-    label: 'Επιχειρήσεις',
-  },
-  {
-    to: '/occupants',
-    icon: '♙',
-    label: 'Παρευρισκόμενοι',
-  },
-  {
-    to: '/settings',
-    icon: '⚙',
-    label: 'Ρυθμίσεις',
-  },
-  {
-    to: '/incidents',
-    icon: '◉',
-    label: 'Συμβάντα & Ιστορικό',
-  },
-];
-
 function Sidebar({ isOpen }) {
+  const { t } = useLanguage();
+
+  const menuItems = [
+    {
+      to: '/dashboard',
+      icon: '⌂',
+      label: t('sidebar', 'dashboard'),
+    },
+    {
+      to: '/companies',
+      icon: '▦',
+      label: t('sidebar', 'companies'),
+    },
+    {
+      to: '/occupants',
+      icon: '♙',
+      label: t('sidebar', 'occupants'),
+    },
+    {
+      to: '/settings',
+      icon: '⚙',
+      label: t('sidebar', 'settings'),
+    },
+    {
+      to: '/incidents',
+      icon: '◉',
+      label: t('sidebar', 'incidents'),
+    },
+  ];
   return (
     <aside
       className={`sidebar ${
@@ -71,11 +73,13 @@ function Sidebar({ isOpen }) {
       </nav>
 
       <div className="sidebar-footer">
-        <span>System status</span>
+        <span>
+          {t('sidebar', 'systemStatus')}
+        </span>
 
         <div className="system-status">
           <span className="system-status-indicator" />
-          Operational
+          {t('sidebar', 'operational')}
         </div>
       </div>
     </aside>

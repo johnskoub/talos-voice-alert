@@ -18,11 +18,6 @@ const menuItems = [
     label: 'Παρευρισκόμενοι',
   },
   {
-    to: '/simulations',
-    icon: '⚠',
-    label: 'Προσομοιώσεις',
-  },
-  {
     to: '/settings',
     icon: '⚙',
     label: 'Ρυθμίσεις',

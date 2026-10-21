@@ -49,11 +49,6 @@ function App() {
         />
 
         <Route
-          path="/simulations"
-          element={<div>Προσομοιώσεις</div>}
-        />
-
-        <Route
           path="/settings"
           element={<div>Ρυθμίσεις</div>}
         />
@@ -61,11 +56,6 @@ function App() {
         <Route
           path="/incidents"
           element={<div>Συμβάντα & Ιστορικό</div>}
-        />
-
-        <Route
-          path="/occupants"
-          element={<OccupantsPage />}
         />
 
       </Route>

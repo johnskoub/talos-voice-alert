@@ -75,6 +75,62 @@ const translations = {
       actions: 'Ενέργειες',
       employee: 'Employee',
       manager: 'Manager',
+      security: 'Security',
+      administrator: 'Administrator',
+
+      address: 'Διεύθυνση',
+      phone: 'Τηλέφωνο',
+      email: 'Email',
+      taxId: 'ΑΦΜ',
+
+      president: 'Πρόεδρος',
+      vicePresident: 'Αντιπρόεδρος',
+      securityTeam: 'Ομάδα ασφαλείας',
+      team: 'Ομάδα',
+      securityPhone: 'Τηλέφωνο ασφαλείας',
+
+      loading: 'Φόρτωση δεδομένων...',
+      errorLoadingData:
+        'Δεν ήταν δυνατή η φόρτωση των δεδομένων.',
+      errorLoadingOccupants:
+        'Δεν ήταν δυνατή η φόρτωση των παρευρισκόμενων.',
+      errorAddingOccupant:
+        'Δεν ήταν δυνατή η προσθήκη του παρευρισκόμενου.',
+      errorUpdatingOccupant:
+        'Δεν ήταν δυνατή η ενημέρωση του παρευρισκόμενου.',
+      errorRemovingOccupant:
+        'Δεν ήταν δυνατή η αφαίρεση του παρευρισκόμενου.',
+
+      occupantsCount: 'παρευρισκόμενοι',
+      noOccupants: 'Δεν υπάρχουν παρευρισκόμενοι',
+      noOccupantsDescription:
+        'Η συγκεκριμένη επιχείρηση δεν έχει ακόμη συνδεδεμένους χρήστες.',
+
+      actions: 'Ενέργειες',
+      status: 'Κατάσταση',
+      activeStatus: 'Ενεργός',
+
+      removeConfirmation:
+        'Θέλετε να αφαιρέσετε τον',
+      removeConfirmationEnd:
+        'από την επιχείρηση;',
+
+      newOccupant: 'NEW OCCUPANT',
+      addOccupantTitle: 'Προσθήκη παρευρισκόμενου',
+      addOccupantDescription:
+        'Προσθέστε έναν χρήστη στην επιλεγμένη επιχείρηση.',
+      user: 'Χρήστης',
+      selectUser: 'Επιλέξτε χρήστη',
+      role: 'Ρόλος',
+      cancel: 'Ακύρωση',
+      saving: 'Αποθήκευση...',
+      addButton: 'Προσθήκη',
+
+      editOccupant: 'EDIT OCCUPANT',
+      editOccupantTitle: 'Επεξεργασία παρευρισκόμενου',
+      editOccupantDescription:
+        'Τροποποιήστε τον ρόλο του παρευρισκόμενου.',
+      saveButton: 'Αποθήκευση',
     },
 
     companies: {
@@ -82,6 +138,57 @@ const translations = {
       addCompany: '+ Νέα επιχείρηση',
       registeredCompanies:
         'Καταχωρημένες επιχειρήσεις',
+    },
+
+    companyManagement: {
+      eyebrow: 'COMPANY MANAGEMENT',
+      title: 'Επιχειρήσεις',
+      description:
+        'Διαχειριστείτε τα στοιχεία των επιχειρήσεων που εμφανίζονται στον πίνακα διαχείρισης.',
+      registeredCompanies: 'Καταχωρημένες επιχειρήσεις',
+      companiesCount: 'επιχειρήσεις',
+      newCompany: 'Νέα επιχείρηση',
+      editCompany: 'Επεξεργασία επιχείρησης',
+      newCompanyEyebrow: 'NEW COMPANY',
+      editCompanyEyebrow: 'EDIT COMPANY',
+
+      basicInformation: 'Βασικά στοιχεία',
+      companyName: 'Όνομα επιχείρησης',
+      address: 'Διεύθυνση',
+      floorCount: 'Αριθμός ορόφων',
+      logoUrl: 'Logo URL',
+      optional: 'Προαιρετικό',
+
+      president: 'Πρόεδρος',
+      vicePresident: 'Αντιπρόεδρος',
+      fullName: 'Ονοματεπώνυμο',
+      phone: 'Τηλέφωνο',
+      email: 'Email',
+
+      securityTeam: 'Ομάδα ασφαλείας',
+      securityTeamPhone: 'Τηλέφωνο ομάδας ασφαλείας',
+
+      floors: 'Όροφοι',
+      occupants: 'Παρευρισκόμενοι',
+
+      edit: 'Επεξεργασία',
+      delete: 'Διαγραφή',
+      saveChanges: 'Αποθήκευση αλλαγών',
+      createCompany: 'Δημιουργία επιχείρησης',
+      cancel: 'Ακύρωση',
+
+      noAddress: 'Δεν έχει οριστεί διεύθυνση',
+
+      deleteConfirmation:
+        'Θέλετε σίγουρα να διαγράψετε αυτή την επιχείρηση;',
+      loadError:
+        'Αδυναμία φόρτωσης των επιχειρήσεων.',
+      placeholderCompanyName:
+        'π.χ. TALOS Industries',
+      placeholderAddress:
+        'π.χ. Λεωφόρος Κηφισίας 120, Αθήνα',
+      placeholderSecurityTeam:
+        'π.χ. 5 άτομα',
     },
 
     dashboard: {
@@ -171,6 +278,62 @@ const translations = {
       actions: 'Actions',
       employee: 'Employee',
       manager: 'Manager',
+      security: 'Security',
+      administrator: 'Administrator',
+
+      address: 'Address',
+      phone: 'Phone',
+      email: 'Email',
+      taxId: 'Tax ID',
+
+      president: 'President',
+      vicePresident: 'Vice President',
+      securityTeam: 'Security Team',
+      team: 'Team',
+      securityPhone: 'Security phone',
+
+      loading: 'Loading data...',
+      errorLoadingData:
+        'The data could not be loaded.',
+      errorLoadingOccupants:
+        'The occupants could not be loaded.',
+      errorAddingOccupant:
+        'The occupant could not be added.',
+      errorUpdatingOccupant:
+        'The occupant could not be updated.',
+      errorRemovingOccupant:
+        'The occupant could not be removed.',
+
+      occupantsCount: 'occupants',
+      noOccupants: 'No occupants',
+      noOccupantsDescription:
+        'This company does not have any connected users yet.',
+
+      actions: 'Actions',
+      status: 'Status',
+      activeStatus: 'Active',
+
+      removeConfirmation:
+        'Do you want to remove',
+      removeConfirmationEnd:
+        'from the company?',
+
+      newOccupant: 'NEW OCCUPANT',
+      addOccupantTitle: 'Add occupant',
+      addOccupantDescription:
+        'Add a user to the selected company.',
+      user: 'User',
+      selectUser: 'Select user',
+      role: 'Role',
+      cancel: 'Cancel',
+      saving: 'Saving...',
+      addButton: 'Add',
+
+      editOccupant: 'EDIT OCCUPANT',
+      editOccupantTitle: 'Edit occupant',
+      editOccupantDescription:
+        'Modify the occupant role.',
+      saveButton: 'Save',
     },
 
     companies: {
@@ -178,6 +341,57 @@ const translations = {
       addCompany: '+ New company',
       registeredCompanies:
         'Registered companies',
+    },
+
+    companyManagement: {
+      eyebrow: 'COMPANY MANAGEMENT',
+      title: 'Companies',
+      description:
+        'Manage the company information displayed on the management dashboard.',
+      registeredCompanies: 'Registered companies',
+      companiesCount: 'companies',
+      newCompany: 'New company',
+      editCompany: 'Edit company',
+      newCompanyEyebrow: 'NEW COMPANY',
+      editCompanyEyebrow: 'EDIT COMPANY',
+
+      basicInformation: 'Basic information',
+      companyName: 'Company name',
+      address: 'Address',
+      floorCount: 'Number of floors',
+      logoUrl: 'Logo URL',
+      optional: 'Optional',
+
+      president: 'President',
+      vicePresident: 'Vice President',
+      fullName: 'Full name',
+      phone: 'Phone',
+      email: 'Email',
+
+      securityTeam: 'Security team',
+      securityTeamPhone: 'Security team phone',
+
+      floors: 'Floors',
+      occupants: 'Occupants',
+
+      edit: 'Edit',
+      delete: 'Delete',
+      saveChanges: 'Save changes',
+      createCompany: 'Create company',
+      cancel: 'Cancel',
+
+      noAddress: 'No address specified',
+
+      deleteConfirmation:
+        'Are you sure you want to delete this company?',
+      loadError:
+        'Unable to load companies.',
+      placeholderCompanyName:
+        'e.g. TALOS Industries',
+      placeholderAddress:
+        'e.g. 120 Kifisias Avenue, Athens',
+      placeholderSecurityTeam:
+        'e.g. 5 people',
     },
 
     dashboard: {
@@ -206,6 +420,10 @@ export function LanguageProvider({ children }) {
     localStorage.getItem('talos-language') || 'el'
   );
 
+  const [darkMode, setDarkMode] = useState(
+    localStorage.getItem('talos-theme') === 'dark'
+  );
+
   useEffect(() => {
     localStorage.setItem(
       'talos-language',
@@ -213,8 +431,29 @@ export function LanguageProvider({ children }) {
     );
   }, [language]);
 
+  useEffect(() => {
+    const root = document.documentElement;
+    const body = document.body;
+
+    if (darkMode) {
+      root.classList.add('dark-theme');
+      body.classList.add('dark-theme');
+
+      localStorage.setItem('talos-theme', 'dark');
+    } else {
+      root.classList.remove('dark-theme');
+      body.classList.remove('dark-theme');
+
+      localStorage.setItem('talos-theme', 'light');
+    }
+  }, [darkMode]);
+
   function changeLanguage(newLanguage) {
     setLanguage(newLanguage);
+  }
+
+  function toggleTheme() {
+    setDarkMode((current) => !current);
   }
 
   function t(section, key) {
@@ -231,6 +470,9 @@ export function LanguageProvider({ children }) {
         language,
         setLanguage: changeLanguage,
         t,
+        darkMode,
+        setDarkMode,
+        toggleTheme,
       }}
     >
       {children}

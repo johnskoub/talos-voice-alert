@@ -2,10 +2,12 @@ import { useNavigate } from 'react-router';
 import PageContainer from '../../components/PageContainer/PageContainer';
 import CompanyGrid from '../../components/CompanyGrid/CompanyGrid';
 import companyMockData from '../../services/companyMockData';
+import { useLanguage } from '../../context/LanguageContext';
 import './DashboardPage.css';
 
 function DashboardPage() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   const handleCompanySelect = (companyId) => {
     navigate(`/companies/${companyId}`);
@@ -15,29 +17,38 @@ function DashboardPage() {
     <PageContainer>
       <section className="dashboard-heading">
         <div>
-          <p className="dashboard-eyebrow">OVERVIEW</p>
+          <p className="dashboard-eyebrow">
+            {t('dashboard', 'eyebrow')}
+          </p>
 
-          <h2>Πίνακας διαχείρισης</h2>
+          <h2>
+            {t('dashboard', 'title')}
+          </h2>
 
           <p>
-            Διαχειριστείτε τις επιχειρήσεις, τους ορόφους και τις
-            προσομοιώσεις εκκένωσης.
+            {t('dashboard', 'description')}
           </p>
         </div>
 
-        <button className="add-company-button" type="button">
+        <button
+          className="add-company-button"
+          type="button"
+        >
           <span aria-hidden="true">+</span>
-          Νέα επιχείρηση
+          {t('companies', 'addCompany')}
         </button>
       </section>
 
       <section className="companies-section">
         <div className="companies-section-header">
           <div>
-            <h3>Επιχειρήσεις</h3>
+            <h3>
+              {t('dashboard', 'companies')}
+            </h3>
 
             <p>
-              {companyMockData.length} καταχωρημένες επιχειρήσεις
+              {companyMockData.length}{' '}
+              {t('dashboard', 'registeredCompanies')}
             </p>
           </div>
         </div>

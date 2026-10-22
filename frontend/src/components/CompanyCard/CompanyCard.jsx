@@ -1,6 +1,9 @@
+import { useLanguage } from '../../context/LanguageContext';
 import './CompanyCard.css';
 
 function CompanyCard({ company, onSelect }) {
+  const { t } = useLanguage();
+
   const isActive = company.status === 'ACTIVE';
 
   const handleOpenCompany = () => {
@@ -21,7 +24,9 @@ function CompanyCard({ company, onSelect }) {
               : 'company-status--inactive'
           }`}
         >
-          {isActive ? 'Ενεργή' : 'Ανενεργή'}
+          {isActive
+            ? t('dashboard', 'active')
+            : t('dashboard', 'inactive')}
         </span>
       </div>
 
@@ -34,13 +39,23 @@ function CompanyCard({ company, onSelect }) {
 
         <div className="company-statistics">
           <div>
-            <span>Όροφοι</span>
-            <strong>{company.floorCount}</strong>
+            <span>
+              {t('dashboard', 'floors')}
+            </span>
+
+            <strong>
+              {company.floorCount}
+            </strong>
           </div>
 
           <div>
-            <span>Παρευρισκόμενοι</span>
-            <strong>{company.occupantCount}</strong>
+            <span>
+              {t('dashboard', 'occupants')}
+            </span>
+
+            <strong>
+              {company.occupantCount}
+            </strong>
           </div>
         </div>
       </div>
@@ -50,7 +65,8 @@ function CompanyCard({ company, onSelect }) {
         type="button"
         onClick={handleOpenCompany}
       >
-        Άνοιγμα επιχείρησης
+        {t('dashboard', 'openCompany')}
+
         <span aria-hidden="true">→</span>
       </button>
     </article>

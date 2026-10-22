@@ -1,15 +1,26 @@
 .dashboard-layout {
   min-height: 100vh;
-  background: #f1f5f9;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  transition:
+    background-color 0.25s ease,
+    color 0.25s ease;
 }
 
 .dashboard-layout-main {
   min-height: 100vh;
   margin-left: 270px;
+  background: var(--bg-primary);
+  transition: background-color 0.25s ease;
 }
 
 .dashboard-layout-content {
   min-height: calc(100vh - 88px);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  transition:
+    background-color 0.25s ease,
+    color 0.25s ease;
 }
 
 .sidebar-overlay {

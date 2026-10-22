@@ -4,51 +4,64 @@
 
 .settings-heading {
   display: flex;
-  justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 24px;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 28px;
 }
 
 .settings-eyebrow {
   margin: 0 0 6px;
+  color: #dc2626;
   font-size: 11px;
   font-weight: 800;
-  letter-spacing: 1.5px;
-  color: #dc2626;
+  letter-spacing: 0.15em;
 }
 
 .settings-heading h2 {
   margin: 0;
-  font-size: 28px;
   color: var(--text-primary);
+  font-size: 30px;
 }
 
 .settings-heading p {
-  margin: 6px 0 0;
+  margin: 7px 0 0;
   color: var(--text-secondary);
 }
 
 .settings-back-button {
-  padding: 10px 16px;
+  min-height: 40px;
+  padding: 0 15px;
   border: 1px solid var(--border-color);
-  border-radius: 7px;
+  border-radius: 8px;
   background: var(--button-bg);
   color: var(--text-primary);
+  font: inherit;
+  font-size: 13px;
   font-weight: 700;
   cursor: pointer;
 }
 
+.settings-back-button:hover {
+  background: var(--bg-secondary);
+}
+
 .settings-card {
-  max-width: 900px;
-  background: var(--bg-card);
+  max-width: 775px;
+  padding: 26px;
   border: 1px solid var(--border-color);
-  border-radius: 14px;
-  padding: 28px;
+  border-radius: 15px;
+  background: var(--bg-card);
   box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+  transition:
+    background-color 0.25s ease,
+    border-color 0.25s ease;
 }
 
 .settings-section {
-  padding: 4px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
 }
 
 .settings-section-title h3 {
@@ -58,20 +71,23 @@
 }
 
 .settings-section-title p {
-  margin: 5px 0 20px;
+  margin: 5px 0 0;
   color: var(--text-secondary);
-  font-size: 14px;
+  font-size: 13px;
 }
 
 .settings-row {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
   gap: 20px;
-  padding: 18px;
-  background: var(--bg-primary);
+  padding: 16px;
   border: 1px solid var(--border-color);
   border-radius: 10px;
+  background: var(--bg-secondary);
+  transition:
+    background-color 0.25s ease,
+    border-color 0.25s ease;
 }
 
 .settings-row-info {
@@ -82,53 +98,47 @@
 
 .settings-row-info strong {
   color: var(--text-primary);
+  font-size: 14px;
 }
 
 .settings-row-info span {
   color: var(--text-secondary);
-  font-size: 13px;
+  font-size: 12px;
 }
-
-.settings-divider {
-  height: 1px;
-  background: var(--border-color);
-  margin: 28px 0;
-}
-
-/* SWITCH */
 
 .settings-switch {
   position: relative;
-  width: 50px;
-  height: 28px;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
   flex-shrink: 0;
 }
 
 .settings-switch input {
-  opacity: 0;
   width: 0;
   height: 0;
+  opacity: 0;
 }
 
 .settings-slider {
   position: absolute;
   inset: 0;
+  border-radius: 999px;
   background: #cbd5e1;
-  border-radius: 30px;
   cursor: pointer;
-  transition: 0.25s;
+  transition: background-color 0.25s ease;
 }
 
 .settings-slider::before {
-  content: '';
   position: absolute;
-  width: 22px;
-  height: 22px;
+  width: 18px;
+  height: 18px;
   left: 3px;
   top: 3px;
-  background: white;
   border-radius: 50%;
-  transition: 0.25s;
+  background: #ffffff;
+  content: '';
+  transition: transform 0.25s ease;
 }
 
 .settings-switch input:checked + .settings-slider {
@@ -136,17 +146,52 @@
 }
 
 .settings-switch input:checked + .settings-slider::before {
-  transform: translateX(22px);
+  transform: translateX(20px);
 }
 
-/* LANGUAGE */
+.settings-divider {
+  height: 1px;
+  margin: 28px 0;
+  background: var(--border-color);
+}
 
 .settings-language-select {
-  min-width: 170px;
-  padding: 10px 12px;
+  min-width: 145px;
+  min-height: 42px;
+  padding: 0 12px;
   border: 1px solid var(--border-color);
-  border-radius: 7px;
+  border-radius: 8px;
   background: var(--input-bg);
   color: var(--text-primary);
+  font: inherit;
+  font-size: 13px;
   cursor: pointer;
+}
+
+.settings-language-select:focus {
+  outline: none;
+  border-color: #64748b;
+}
+
+@media (max-width: 700px) {
+  .settings-heading {
+    flex-direction: column;
+  }
+
+  .settings-back-button {
+    width: 100%;
+  }
+
+  .settings-card {
+    padding: 18px;
+  }
+
+  .settings-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .settings-language-select {
+    width: 100%;
+  }
 }

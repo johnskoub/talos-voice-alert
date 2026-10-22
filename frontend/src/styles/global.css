@@ -6,21 +6,53 @@
   --bg-primary: #f0f4f8;
   --bg-secondary: #ffffff;
   --bg-card: #ffffff;
+
   --text-primary: #0f172a;
   --text-secondary: #64748b;
+
   --border-color: #dbe3ec;
+
   --input-bg: #ffffff;
   --header-bg: #ffffff;
   --button-bg: #ffffff;
+
+  --sidebar-bg: #0f172a;
+  --sidebar-text: #ffffff;
+
+  --accent-color: #ef2b2d;
 }
 
 html {
   scroll-behavior: smooth;
+  background: var(--bg-primary);
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+html {
+  background: var(--bg-primary);
 }
 
 body {
   margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
   font-family: Arial, Helvetica, sans-serif;
+
+  background: var(--bg-primary);
+  color: var(--text-primary);
+
+  transition:
+    background-color 0.25s ease,
+    color 0.25s ease;
+}
+
+#root {
+  min-height: 100vh;
   background: var(--bg-primary);
   color: var(--text-primary);
   transition:
@@ -28,17 +60,38 @@ body {
     color 0.25s ease;
 }
 
-body.dark-theme {
-  --bg-primary: #0f172a;
+/* =========================================
+   DARK THEME
+   ========================================= */
+
+html.dark-theme,
+body.dark-theme,
+body.dark-theme #root {
+  --bg-primary: #0b1120;
   --bg-secondary: #111827;
   --bg-card: #1e293b;
-  --text-primary: #f8fafc;
-  --text-secondary: #94a3b8;
+
+  --text-primary: #ffffff;
+  --text-secondary: #cbd5e1;
+
   --border-color: #334155;
-  --input-bg: #1e293b;
-  --header-bg: #111827;
+
+  --input-bg: #111827;
+  --header-bg: #0f172a;
   --button-bg: #1e293b;
+
+  --sidebar-bg: #080f1f;
+  --sidebar-text: #ffffff;
+
+  --accent-color: #ef2b2d;
+
+  background-color: #0b1120;
+  color: #ffffff;
 }
+
+/* =========================================
+   GLOBAL ELEMENTS
+   ========================================= */
 
 img {
   max-width: 100%;
@@ -49,19 +102,106 @@ input,
 select,
 textarea {
   font: inherit;
-}
 
-button,
-input,
-select,
-textarea {
   transition:
     background-color 0.25s ease,
     color 0.25s ease,
     border-color 0.25s ease;
 }
 
+button {
+  cursor: pointer;
+}
+
+input,
+select,
+textarea {
+  background: var(--input-bg);
+  color: var(--text-primary);
+  border-color: var(--border-color);
+}
+
+/* =========================================
+   APP
+   ========================================= */
+
+#root {
+  min-height: 100vh;
+  background: var(--bg-primary);
+}
+
 .app {
   min-height: 100vh;
-  padding: 40px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+/* =========================================
+   COMMON PAGE CONTAINER
+   ========================================= */
+
+.page-container {
+  width: 100%;
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 32px;
+
+  background: transparent;
+}
+
+/* =========================================
+   DARK MODE - COMMON ELEMENTS
+   ========================================= */
+
+html.dark-theme .page-container,
+body.dark-theme .page-container {
+  background: transparent;
+}
+
+html.dark-theme h1,
+html.dark-theme h2,
+html.dark-theme h3,
+html.dark-theme h4,
+html.dark-theme h5,
+html.dark-theme h6,
+body.dark-theme h1,
+body.dark-theme h2,
+body.dark-theme h3,
+body.dark-theme h4,
+body.dark-theme h5,
+body.dark-theme h6 {
+  color: var(--text-primary);
+}
+
+html.dark-theme p,
+body.dark-theme p {
+  color: var(--text-secondary);
+}
+
+html.dark-theme input,
+html.dark-theme select,
+html.dark-theme textarea,
+body.dark-theme input,
+body.dark-theme select,
+body.dark-theme textarea {
+  background-color: var(--input-bg);
+  color: var(--text-primary);
+  border-color: var(--border-color);
+}
+
+html.dark-theme input::placeholder,
+html.dark-theme textarea::placeholder,
+body.dark-theme input::placeholder,
+body.dark-theme textarea::placeholder {
+  color: #64748b;
+}
+
+/* =========================================
+   RESPONSIVE
+   ========================================= */
+
+@media (max-width: 768px) {
+  .page-container {
+    padding: 24px 18px;
+  }
 }

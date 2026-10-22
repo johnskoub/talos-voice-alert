@@ -7,10 +7,12 @@ import {
   updateCompany,
   deleteCompany,
 } from '../../services/api';
+import { useLanguage } from '../../context/LanguageContext';
 import './CompaniesPage.css';
 
 function CompaniesPage() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   const [companies, setCompanies] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -40,17 +42,19 @@ function CompaniesPage() {
 
   async function loadCompanies() {
     try {
-        setLoading(true);
-        setError('');
+      setLoading(true);
+      setError('');
 
-        const data = await getCompanies();
+      const data = await getCompanies();
 
-        setCompanies(Array.isArray(data) ? data : []);
+      setCompanies(Array.isArray(data) ? data : []);
     } catch (error) {
-        console.error('Failed to load companies:', error);
-        setError('Αδυναμία φόρτωσης των επιχειρήσεων.');
+      console.error('Failed to load companies:', error);
+      setError(
+        t('companyManagement', 'loadError')
+      );
     } finally {
-        setLoading(false);
+      setLoading(false);
     }
   }
 
@@ -104,59 +108,98 @@ function CompaniesPage() {
     });
   };
 
-  const handleDelete = (companyId) => {
+  const handleDelete = async (companyId) => {
     const confirmed = window.confirm(
-      'Θέλετε σίγουρα να διαγράψετε αυτή την επιχείρηση;'
+      t(
+        'companyManagement',
+        'deleteConfirmation'
+      )
     );
 
     if (!confirmed) {
       return;
     }
 
-    setCompanies((current) =>
-      current.filter(
-        (company) => company.id !== companyId
-      )
-    );
+    try {
+      await deleteCompany(companyId);
 
-    if (editingCompanyId === companyId) {
-      resetForm();
+      setCompanies((current) =>
+        current.filter(
+          (company) => company.id !== companyId
+        )
+      );
+
+      if (editingCompanyId === companyId) {
+        resetForm();
+      }
+    } catch (error) {
+      console.error(
+        'Failed to delete company:',
+        error
+      );
+
+      setError(
+        t('companyManagement', 'deleteError')
+      );
     }
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
 
     if (!formData.name.trim()) {
       return;
     }
 
-    if (editingCompanyId !== null) {
-      setCompanies((current) =>
-        current.map((company) =>
-          company.id === editingCompanyId
-            ? {
-                ...company,
-                ...formData,
-                floors: Number(formData.floors) || 0,
-              }
-            : company
-        )
+    try {
+      if (editingCompanyId !== null) {
+        const updatedCompany =
+          await updateCompany(
+            editingCompanyId,
+            {
+              ...formData,
+              floors:
+                Number(formData.floors) || 0,
+            }
+          );
+
+        setCompanies((current) =>
+          current.map((company) =>
+            company.id === editingCompanyId
+              ? updatedCompany || {
+                  ...company,
+                  ...formData,
+                  floors:
+                    Number(formData.floors) || 0,
+                }
+              : company
+          )
+        );
+      } else {
+        const newCompany =
+          await createCompany({
+            ...formData,
+            floors:
+              Number(formData.floors) || 0,
+          });
+
+        setCompanies((current) => [
+          ...current,
+          newCompany,
+        ]);
+      }
+
+      resetForm();
+    } catch (error) {
+      console.error(
+        'Failed to save company:',
+        error
       );
-    } else {
-      const newCompany = {
-        id: Date.now(),
-        ...formData,
-        floors: Number(formData.floors) || 0,
-      };
 
-      setCompanies((current) => [
-        ...current,
-        newCompany,
-      ]);
+      setError(
+        t('companyManagement', 'saveError')
+      );
     }
-
-    resetForm();
   };
 
   return (
@@ -165,23 +208,38 @@ function CompaniesPage() {
         <div className="companies-page-header">
           <div>
             <p className="companies-page-eyebrow">
-              COMPANY MANAGEMENT
+              {t(
+                'companyManagement',
+                'eyebrow'
+              )}
             </p>
 
-            <h2>Επιχειρήσεις</h2>
+            <h2>
+              {t(
+                'companyManagement',
+                'title'
+              )}
+            </h2>
 
             <p>
-              Διαχειριστείτε τα στοιχεία των επιχειρήσεων
-              που εμφανίζονται στον πίνακα διαχείρισης.
+              {t(
+                'companyManagement',
+                'description'
+              )}
             </p>
           </div>
 
           <button
             type="button"
             className="companies-back-button"
-            onClick={() => navigate('/dashboard')}
+            onClick={() =>
+              navigate('/dashboard')
+            }
           >
-            ← Πίσω στο Dashboard
+            {t(
+              'common',
+              'backDashboard'
+            )}
           </button>
         </div>
 
@@ -189,10 +247,19 @@ function CompaniesPage() {
           <section className="companies-list-card">
             <div className="companies-card-header">
               <div>
-                <h3>Καταχωρημένες επιχειρήσεις</h3>
+                <h3>
+                  {t(
+                    'companyManagement',
+                    'registeredCompanies'
+                  )}
+                </h3>
 
                 <p>
-                  {companies.length} επιχειρήσεις
+                  {companies.length}{' '}
+                  {t(
+                    'companyManagement',
+                    'companiesCount'
+                  )}
                 </p>
               </div>
 
@@ -200,75 +267,110 @@ function CompaniesPage() {
                 type="button"
                 onClick={resetForm}
               >
-                + Νέα επιχείρηση
+                +{' '}
+                {t(
+                  'companyManagement',
+                  'newCompany'
+                )}
               </button>
             </div>
 
-            <div className="companies-list">
-              {companies.map((company) => (
-                <article
-                  key={company.id}
-                  className="company-management-card"
-                >
-                  <div className="company-management-logo">
-                    {company.logo ? (
-                      <img
-                        src={company.logo}
-                        alt={company.name}
-                      />
-                    ) : (
-                      <span>
-                        {company.name
-                          ?.charAt(0)
-                          ?.toUpperCase() || 'T'}
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="company-management-info">
-                    <h4>{company.name}</h4>
-
-                    <p>
-                      {company.address ||
-                        'Δεν έχει οριστεί διεύθυνση'}
-                    </p>
-
-                    <div>
-                      <span>
-                        Όροφοι:{' '}
-                        {company.floors || 0}
-                      </span>
-
-                      <span>
-                        Παρευρισκόμενοι:{' '}
-                        {company.occupants ?? 0}
-                      </span>
+            {loading ? (
+              <p>
+                {t('common', 'loading')}
+              </p>
+            ) : (
+              <div className="companies-list">
+                {companies.map((company) => (
+                  <article
+                    key={company.id}
+                    className="company-management-card"
+                  >
+                    <div className="company-management-logo">
+                      {company.logo ? (
+                        <img
+                          src={company.logo}
+                          alt={company.name}
+                        />
+                      ) : (
+                        <span>
+                          {company.name
+                            ?.charAt(0)
+                            ?.toUpperCase() || 'T'}
+                        </span>
+                      )}
                     </div>
-                  </div>
 
-                  <div className="company-management-actions">
-                    <button
-                      type="button"
-                      onClick={() =>
-                        handleEdit(company)
-                      }
-                    >
-                      Επεξεργασία
-                    </button>
+                    <div className="company-management-info">
+                      <h4>{company.name}</h4>
 
-                    <button
-                      type="button"
-                      className="company-delete-button"
-                      onClick={() =>
-                        handleDelete(company.id)
-                      }
-                    >
-                      Διαγραφή
-                    </button>
-                  </div>
-                </article>
-              ))}
-            </div>
+                      <p>
+                        {company.address ||
+                          t(
+                            'companyManagement',
+                            'noAddress'
+                          )}
+                      </p>
+
+                      <div>
+                        <span>
+                          {t(
+                            'companyManagement',
+                            'floors'
+                          )}
+                          :{' '}
+                          {company.floors || 0}
+                        </span>
+
+                        <span>
+                          {t(
+                            'companyManagement',
+                            'occupants'
+                          )}
+                          :{' '}
+                          {company.occupants ?? 0}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="company-management-actions">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleEdit(company)
+                        }
+                      >
+                        {t(
+                          'companyManagement',
+                          'edit'
+                        )}
+                      </button>
+
+                      <button
+                        type="button"
+                        className="company-delete-button"
+                        onClick={() =>
+                          handleDelete(
+                            company.id
+                          )
+                        }
+                      >
+                        {t(
+                          'companyManagement',
+                          'delete'
+                        )}
+                      </button>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            )}
+
+            {error && (
+              <div className="companies-error">
+                {error}
+              </div>
+            )}
           </section>
 
           <section className="company-form-card">
@@ -276,45 +378,80 @@ function CompaniesPage() {
               <div>
                 <p className="companies-page-eyebrow">
                   {editingCompanyId !== null
-                    ? 'EDIT COMPANY'
-                    : 'NEW COMPANY'}
+                    ? t(
+                        'companyManagement',
+                        'editCompanyEyebrow'
+                      )
+                    : t(
+                        'companyManagement',
+                        'newCompanyEyebrow'
+                      )}
                 </p>
 
                 <h3>
                   {editingCompanyId !== null
-                    ? 'Επεξεργασία επιχείρησης'
-                    : 'Νέα επιχείρηση'}
+                    ? t(
+                        'companyManagement',
+                        'editCompany'
+                      )
+                    : t(
+                        'companyManagement',
+                        'newCompany'
+                      )}
                 </h3>
               </div>
             </div>
 
             <form onSubmit={handleSubmit}>
               <div className="company-form-section">
-                <h4>Βασικά στοιχεία</h4>
+                <h4>
+                  {t(
+                    'companyManagement',
+                    'basicInformation'
+                  )}
+                </h4>
 
                 <label>
-                  Όνομα επιχείρησης
+                  {t(
+                    'companyManagement',
+                    'companyName'
+                  )}
+
                   <input
                     name="name"
                     value={formData.name}
                     onChange={handleChange}
-                    placeholder="π.χ. TALOS Industries"
+                    placeholder={t(
+                      'companyManagement',
+                      'placeholderCompanyName'
+                    )}
                     required
                   />
                 </label>
 
                 <label>
-                  Διεύθυνση
+                  {t(
+                    'companyManagement',
+                    'address'
+                  )}
+
                   <input
                     name="address"
                     value={formData.address}
                     onChange={handleChange}
-                    placeholder="π.χ. Λεωφόρος Κηφισίας 120, Αθήνα"
+                    placeholder={t(
+                      'companyManagement',
+                      'placeholderAddress'
+                    )}
                   />
                 </label>
 
                 <label>
-                  Αριθμός ορόφων
+                  {t(
+                    'companyManagement',
+                    'floorCount'
+                  )}
+
                   <input
                     type="number"
                     min="0"
@@ -325,71 +462,122 @@ function CompaniesPage() {
                 </label>
 
                 <label>
-                  Logo URL
+                  {t(
+                    'companyManagement',
+                    'logoUrl'
+                  )}
+
                   <input
                     name="logo"
                     value={formData.logo}
                     onChange={handleChange}
-                    placeholder="Προαιρετικό"
+                    placeholder={t(
+                      'companyManagement',
+                      'optional'
+                    )}
                   />
                 </label>
               </div>
 
               <div className="company-form-section">
-                <h4>Πρόεδρος</h4>
+                <h4>
+                  {t(
+                    'companyManagement',
+                    'president'
+                  )}
+                </h4>
 
                 <label>
-                  Ονοματεπώνυμο
+                  {t(
+                    'companyManagement',
+                    'fullName'
+                  )}
+
                   <input
                     name="presidentName"
-                    value={formData.presidentName}
+                    value={
+                      formData.presidentName
+                    }
                     onChange={handleChange}
                   />
                 </label>
 
                 <label>
-                  Τηλέφωνο
+                  {t(
+                    'companyManagement',
+                    'phone'
+                  )}
+
                   <input
                     name="presidentPhone"
-                    value={formData.presidentPhone}
+                    value={
+                      formData.presidentPhone
+                    }
                     onChange={handleChange}
                   />
                 </label>
 
                 <label>
-                  Email
+                  {t(
+                    'companyManagement',
+                    'email'
+                  )}
+
                   <input
                     type="email"
                     name="presidentEmail"
-                    value={formData.presidentEmail}
+                    value={
+                      formData.presidentEmail
+                    }
                     onChange={handleChange}
                   />
                 </label>
               </div>
 
               <div className="company-form-section">
-                <h4>Αντιπρόεδρος</h4>
+                <h4>
+                  {t(
+                    'companyManagement',
+                    'vicePresident'
+                  )}
+                </h4>
 
                 <label>
-                  Ονοματεπώνυμο
+                  {t(
+                    'companyManagement',
+                    'fullName'
+                  )}
+
                   <input
                     name="vicePresidentName"
-                    value={formData.vicePresidentName}
+                    value={
+                      formData.vicePresidentName
+                    }
                     onChange={handleChange}
                   />
                 </label>
 
                 <label>
-                  Τηλέφωνο
+                  {t(
+                    'companyManagement',
+                    'phone'
+                  )}
+
                   <input
                     name="vicePresidentPhone"
-                    value={formData.vicePresidentPhone}
+                    value={
+                      formData.vicePresidentPhone
+                    }
                     onChange={handleChange}
                   />
                 </label>
 
                 <label>
-                  Email
+                  {t(
+                    'companyManagement',
+                    'email'
+                  )}
+
                   <input
                     type="email"
                     name="vicePresidentEmail"
@@ -402,23 +590,43 @@ function CompaniesPage() {
               </div>
 
               <div className="company-form-section">
-                <h4>Ομάδα ασφαλείας</h4>
+                <h4>
+                  {t(
+                    'companyManagement',
+                    'securityTeam'
+                  )}
+                </h4>
 
                 <label>
-                  Ομάδα ασφαλείας
+                  {t(
+                    'companyManagement',
+                    'securityTeam'
+                  )}
+
                   <input
                     name="securityTeam"
-                    value={formData.securityTeam}
+                    value={
+                      formData.securityTeam
+                    }
                     onChange={handleChange}
-                    placeholder="π.χ. 5 άτομα"
+                    placeholder={t(
+                      'companyManagement',
+                      'placeholderSecurityTeam'
+                    )}
                   />
                 </label>
 
                 <label>
-                  Τηλέφωνο ομάδας ασφαλείας
+                  {t(
+                    'companyManagement',
+                    'securityTeamPhone'
+                  )}
+
                   <input
                     name="securityPhone"
-                    value={formData.securityPhone}
+                    value={
+                      formData.securityPhone
+                    }
                     onChange={handleChange}
                   />
                 </label>
@@ -430,8 +638,14 @@ function CompaniesPage() {
                   className="company-save-button"
                 >
                   {editingCompanyId !== null
-                    ? 'Αποθήκευση αλλαγών'
-                    : 'Δημιουργία επιχείρησης'}
+                    ? t(
+                        'companyManagement',
+                        'saveChanges'
+                      )
+                    : t(
+                        'companyManagement',
+                        'createCompany'
+                      )}
                 </button>
 
                 {editingCompanyId !== null && (
@@ -439,7 +653,10 @@ function CompaniesPage() {
                     type="button"
                     onClick={resetForm}
                   >
-                    Ακύρωση
+                    {t(
+                      'companyManagement',
+                      'cancel'
+                    )}
                   </button>
                 )}
               </div>

@@ -21,7 +21,7 @@
 .companies-page h2,
 .companies-page h3,
 .companies-page h4 {
-  color: #0f172a;
+  color: var(--text-primary);
 }
 
 .companies-page-header h2 {
@@ -30,20 +30,27 @@
 
 .companies-page-header p:last-child {
   margin: 0;
-  color: #64748b;
+  color: var(--text-secondary);
 }
 
 .companies-back-button,
 .companies-card-header button,
 .company-management-actions button,
 .company-form-actions button {
-  border: 1px solid #cbd5e1;
+  border: 1px solid var(--border-color);
   border-radius: 8px;
   padding: 10px 14px;
-  background: #ffffff;
-  color: #0f172a;
+  background: var(--button-bg);
+  color: var(--text-primary);
   font-weight: 700;
   cursor: pointer;
+}
+
+.companies-back-button:hover,
+.companies-card-header button:hover,
+.company-management-actions button:hover,
+.company-form-actions button:hover {
+  background: var(--bg-secondary);
 }
 
 .companies-page-grid {
@@ -55,9 +62,12 @@
 .companies-list-card,
 .company-form-card {
   padding: 20px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border-color);
   border-radius: 14px;
-  background: #ffffff;
+  background: var(--bg-card);
+  transition:
+    background-color 0.25s ease,
+    border-color 0.25s ease;
 }
 
 .companies-card-header {
@@ -74,7 +84,7 @@
 
 .companies-card-header p {
   margin: 0;
-  color: #64748b;
+  color: var(--text-secondary);
   font-size: 13px;
 }
 
@@ -88,8 +98,12 @@
   align-items: center;
   gap: 15px;
   padding: 15px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border-color);
   border-radius: 10px;
+  background: var(--bg-secondary);
+  transition:
+    background-color 0.25s ease,
+    border-color 0.25s ease;
 }
 
 .company-management-logo {
@@ -123,7 +137,7 @@
 
 .company-management-info p {
   margin: 0 0 8px;
-  color: #64748b;
+  color: var(--text-secondary);
   font-size: 13px;
 }
 
@@ -131,7 +145,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
-  color: #475569;
+  color: var(--text-secondary);
   font-size: 12px;
 }
 
@@ -149,7 +163,7 @@
   display: grid;
   gap: 12px;
   padding: 18px 0;
-  border-top: 1px solid #e2e8f0;
+  border-top: 1px solid var(--border-color);
 }
 
 .company-form-section:first-of-type {
@@ -164,7 +178,7 @@
 .company-form-section label {
   display: grid;
   gap: 6px;
-  color: #475569;
+  color: var(--text-secondary);
   font-size: 12px;
   font-weight: 700;
 }
@@ -173,10 +187,16 @@
   width: 100%;
   box-sizing: border-box;
   padding: 10px 12px;
-  border: 1px solid #cbd5e1;
+  border: 1px solid var(--border-color);
   border-radius: 8px;
   outline: none;
+  background: var(--input-bg);
+  color: var(--text-primary);
   font: inherit;
+}
+
+.company-form-section input::placeholder {
+  color: var(--text-secondary);
 }
 
 .company-form-section input:focus {

@@ -13,20 +13,21 @@
   place-items: center;
   align-content: center;
   padding: 32px;
-  border: 1px dashed #cbd5e1;
+  border: 1px dashed var(--border-color);
   border-radius: 14px;
-  background: #ffffff;
+  background: var(--bg-card);
+  color: var(--text-primary);
   text-align: center;
 }
 
 .companies-empty-state h3 {
   margin: 0;
-  color: #0f172a;
+  color: var(--text-primary);
 }
 
 .companies-empty-state p {
   margin: 10px 0 0;
-  color: #64748b;
+  color: var(--text-secondary);
 }
 
 @media (max-width: 1250px) {

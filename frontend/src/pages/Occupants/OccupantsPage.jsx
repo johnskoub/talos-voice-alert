@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useLanguage } from '../../context/LanguageContext';
 import { useNavigate } from 'react-router';
 import PageContainer from '../../components/PageContainer/PageContainer';
 import {
@@ -13,6 +14,7 @@ import './OccupantsPage.css';
 
 function OccupantsPage() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   const [companies, setCompanies] = useState([]);
   const [companyUsers, setCompanyUsers] = useState([]);
@@ -71,7 +73,7 @@ function OccupantsPage() {
       } catch (err) {
         console.error(err);
         setError(
-          'Δεν ήταν δυνατή η φόρτωση των δεδομένων.'
+          t('occupants', 'errorLoadingData')
         );
       } finally {
         setLoading(false);
@@ -97,7 +99,7 @@ function OccupantsPage() {
       } catch (err) {
         console.error(err);
         setError(
-          'Δεν ήταν δυνατή η φόρτωση των παρευρισκόμενων.'
+          t('occupants', 'errorLoadingOccupants')
         );
       }
     }
@@ -166,7 +168,7 @@ function OccupantsPage() {
         console.error(err);
 
         setError(
-        'Δεν ήταν δυνατή η προσθήκη του παρευρισκόμενου.'
+          t('occupants', 'errorAddingOccupant')
         );
     } finally {
         setSavingOccupant(false);
@@ -211,7 +213,7 @@ function OccupantsPage() {
       console.error(err);
 
       setError(
-        'Δεν ήταν δυνατή η ενημέρωση του παρευρισκόμενου.'
+        t('occupants', 'errorUpdatingOccupant')
       );
     } finally {
       setSavingEdit(false);
@@ -225,14 +227,13 @@ function OccupantsPage() {
         <div className="occupants-heading">
           <div>
             <p className="occupants-eyebrow">
-              OCCUPANT MANAGEMENT
+              {t('occupants', 'eyebrow')}
             </p>
 
-            <h2>Παρευρισκόμενοι</h2>
+            <h2>{t('occupants', 'title')}</h2>
 
             <p>
-              Διαχειριστείτε τους παρευρισκόμενους
-              ανά επιχείρηση.
+              {t('occupants', 'description')}
             </p>
           </div>
 
@@ -241,18 +242,19 @@ function OccupantsPage() {
             className="back-dashboard-button"
             onClick={() => navigate('/dashboard')}
           >
-            ← Πίσω στο Dashboard
+            {t('common', 'backDashboard')}
           </button>
         </div>
 
         <section className="occupants-card">
           <div className="occupants-card-header">
             <div>
-              <h3>Παρευρισκόμενοι επιχείρησης</h3>
+              <h3>
+                {t('occupants', 'companyOccupants')}
+              </h3>
 
               <p>
-                Επιλέξτε επιχείρηση για να δείτε τους
-                συνδεδεμένους χρήστες.
+                {t('occupants', 'companyDescription')}
               </p>
             </div>
 
@@ -262,13 +264,13 @@ function OccupantsPage() {
                 disabled={!selectedCompanyId}
                 onClick={() => setIsAddModalOpen(true)}
             >
-                + Προσθήκη παρευρισκόμενου
+                {t('occupants', 'addOccupant')}
             </button>
           </div>
 
           <div className="occupants-company-selector">
             <label htmlFor="company">
-              Επιχείρηση
+              {t('occupants', 'company')}
             </label>
 
             <select
@@ -300,7 +302,7 @@ function OccupantsPage() {
                     </strong>
 
                     <span>
-                    {occupants.length} παρευρισκόμενοι
+                      {occupants.length} {t('occupants', 'occupantsCount')}
                     </span>
                 </div>
                 </div>
@@ -309,31 +311,31 @@ function OccupantsPage() {
 
                 {/* Στοιχεία επιχείρησης */}
                 <div className="company-info-box">
-                    <h4>Στοιχεία επιχείρησης</h4>
+                    <h4>{t('occupants', 'companyDetails')}</h4>
 
                     <div className="company-info-row">
-                    <span>Διεύθυνση</span>
+                    <span>{t('occupants', 'address')}</span>
                     <strong>
                         {selectedCompany.address || '—'}
                     </strong>
                     </div>
 
                     <div className="company-info-row">
-                    <span>Τηλέφωνο</span>
+                    <span>{t('occupants', 'phone')}</span>
                     <strong>
                         {selectedCompany.phone || '—'}
                     </strong>
                     </div>
 
                     <div className="company-info-row">
-                    <span>Email</span>
+                    <span>{t('occupants', 'email')}</span>
                     <strong>
                         {selectedCompany.email || '—'}
                     </strong>
                     </div>
 
                     <div className="company-info-row">
-                    <span>ΑΦΜ</span>
+                    <span>{t('occupants', 'taxId')}</span>
                     <strong>
                         {selectedCompany.taxId || '—'}
                     </strong>
@@ -342,72 +344,72 @@ function OccupantsPage() {
 
                 {/* Πρόεδρος */}
                 <div className="company-info-box">
-                    <h4>Πρόεδρος</h4>
+                    <h4>{t('occupants', 'president')}</h4>
 
                     <div className="company-info-row">
-                    <span>Ονοματεπώνυμο</span>
-                    <strong>
+                      <span>{t('occupants', 'fullName')}</span>
+                      <strong>
                         {selectedCompany.presidentName || '—'}
-                    </strong>
+                      </strong>
                     </div>
 
                     <div className="company-info-row">
-                    <span>Τηλέφωνο</span>
-                    <strong>
+                      <span>{t('occupants', 'phone')}</span>
+                      <strong>
                         {selectedCompany.presidentPhone || '—'}
-                    </strong>
+                      </strong>
                     </div>
 
                     <div className="company-info-row">
-                    <span>Email</span>
-                    <strong>
+                      <span>{t('occupants', 'email')}</span>
+                      <strong>
                         {selectedCompany.presidentEmail || '—'}
-                    </strong>
+                      </strong>
                     </div>
                 </div>
 
                 {/* Αντιπρόεδρος */}
                 <div className="company-info-box">
-                    <h4>Αντιπρόεδρος</h4>
+                    <h4>{t('occupants', 'vicePresident')}</h4>
 
                     <div className="company-info-row">
-                    <span>Ονοματεπώνυμο</span>
-                    <strong>
+                      <span>{t('occupants', 'fullName')}</span>
+                      <strong>
                         {selectedCompany.vicePresidentName || '—'}
-                    </strong>
+                      </strong>
                     </div>
 
                     <div className="company-info-row">
-                    <span>Τηλέφωνο</span>
-                    <strong>
+                      <span>{t('occupants', 'phone')}</span>
+                      <strong>
                         {selectedCompany.vicePresidentPhone || '—'}
-                    </strong>
+                      </strong>
                     </div>
 
                     <div className="company-info-row">
-                    <span>Email</span>
-                    <strong>
+                      <span>{t('occupants', 'email')}</span>
+                      <strong>
                         {selectedCompany.vicePresidentEmail || '—'}
-                    </strong>
+                      </strong>
                     </div>
                 </div>
 
                 {/* Ομάδα ασφαλείας */}
                 <div className="company-info-box">
-                    <h4>Ομάδα ασφαλείας</h4>
+                    <h4>{t('occupants', 'securityTeam')}</h4>
 
                     <div className="company-info-row">
-                    <span>Ομάδα</span>
-                    <strong>
+                      <span>{t('occupants', 'team')}</span>
+                      <strong>
                         {selectedCompany.securityTeam || '—'}
-                    </strong>
+                      </strong>
                     </div>
 
                     <div className="company-info-row">
-                    <span>Τηλέφωνο ασφαλείας</span>
-                    <strong>
+                      <span>{t('occupants', 'securityPhone')}</span>
+                      <strong>
                         {selectedCompany.securityPhone || '—'}
-                    </strong>
+                      </strong>
                     </div>
                 </div>
 
@@ -415,11 +417,9 @@ function OccupantsPage() {
             </>
             )}
 
-          {loading && (
-            <div className="occupants-empty">
-              Φόρτωση δεδομένων...
-            </div>
-          )}
+          <div className="occupants-empty">
+            {t('occupants', 'loading')}
+          </div>
 
           {!loading && error && (
             <div
@@ -435,12 +435,11 @@ function OccupantsPage() {
             occupants.length === 0 && (
               <div className="occupants-empty">
                 <h4>
-                  Δεν υπάρχουν παρευρισκόμενοι
+                  {t('occupants', 'noOccupants')}
                 </h4>
 
                 <p>
-                  Η συγκεκριμένη επιχείρηση δεν έχει
-                  ακόμη συνδεδεμένους χρήστες.
+                  {t('occupants', 'noOccupantsDescription')}
                 </p>
               </div>
             )}
@@ -452,12 +451,12 @@ function OccupantsPage() {
                 <table className="occupants-table">
                   <thead>
                     <tr>
-                      <th>Ονοματεπώνυμο</th>
-                      <th>Username</th>
-                      <th>Email</th>
-                      <th>Ρόλος</th>
-                      <th>Κατάσταση</th>
-                      <th>Ενέργειες</th>
+                      <th>{t('occupants', 'fullName')}</th>
+                        <th>{t('occupants', 'username')}</th>
+                        <th>{t('occupants', 'email')}</th>
+                        <th>{t('occupants', 'role')}</th>
+                        <th>{t('occupants', 'status')}</th>
+                        <th>{t('occupants', 'actions')}</th>
                     </tr>
                   </thead>
 
@@ -489,7 +488,7 @@ function OccupantsPage() {
 
                         <td>
                           <span className="occupant-status">
-                            Ενεργός
+                            {t('occupants', 'activeStatus')}
                           </span>
                         </td>
 
@@ -504,7 +503,7 @@ function OccupantsPage() {
                                 setIsEditModalOpen(true);
                               }}
                             >
-                              Επεξεργασία
+                              {t('common', 'edit')}
                             </button>
 
                             <button
@@ -512,7 +511,11 @@ function OccupantsPage() {
                               className="delete-occupant-button"
                               onClick={async () => {
                                 const confirmed = window.confirm(
-                                  `Θέλετε να αφαιρέσετε τον ${occupant.user.firstName} ${occupant.user.lastName} από την επιχείρηση;`
+                                  `${t('occupants', 'removeConfirmation')} ${
+                                    occupant.user.firstName
+                                  } ${occupant.user.lastName} ${
+                                    t('occupants', 'removeConfirmationEnd')
+                                  }`
                                 );
 
                                 if (!confirmed) {
@@ -530,12 +533,12 @@ function OccupantsPage() {
                                 } catch (err) {
                                   console.error(err);
                                   setError(
-                                    'Δεν ήταν δυνατή η αφαίρεση του παρευρισκόμενου.'
+                                    t('occupants', 'errorRemovingOccupant')
                                   );
                                 }
                               }}
                             >
-                              Αφαίρεση
+                              {t('common', 'remove')}
                             </button>
                           </div>
                         </td>
@@ -560,14 +563,15 @@ function OccupantsPage() {
             <div className="occupant-modal-header">
                 <div>
                 <p className="occupants-eyebrow">
-                    NEW OCCUPANT
+                  {t('occupants', 'newOccupant')}
                 </p>
 
-                <h3>Προσθήκη παρευρισκόμενου</h3>
+                <h3>
+                  {t('occupants', 'addOccupantTitle')}
+                </h3>
 
                 <p>
-                    Προσθέστε έναν χρήστη στην επιλεγμένη
-                    επιχείρηση.
+                  {t('occupants', 'addOccupantDescription')}
                 </p>
                 </div>
 
@@ -583,9 +587,9 @@ function OccupantsPage() {
             <form onSubmit={handleAddOccupant}>
 
                 <div className="occupant-form-group">
-                <label htmlFor="occupant-user">
-                    Χρήστης
-                </label>
+                <option value="">
+                  {t('occupants', 'selectUser')}
+                </option>
 
                 <select
                     id="occupant-user"
@@ -623,7 +627,7 @@ function OccupantsPage() {
 
                 <div className="occupant-form-group">
                 <label htmlFor="occupant-role">
-                    Ρόλος
+                    {t('occupants', 'cancel')}
                 </label>
 
                 <select
@@ -634,19 +638,19 @@ function OccupantsPage() {
                     }
                 >
                     <option value="EMPLOYEE">
-                    Employee
+                      {t('occupants', 'employee')}
                     </option>
 
                     <option value="MANAGER">
-                    Manager
+                      {t('occupants', 'manager')}
                     </option>
 
                     <option value="SECURITY">
-                    Security
+                      {t('occupants', 'security')}
                     </option>
 
                     <option value="ADMIN">
-                    Administrator
+                      {t('occupants', 'administrator')}
                     </option>
                 </select>
                 </div>
@@ -657,7 +661,7 @@ function OccupantsPage() {
                     className="occupant-cancel-button"
                     onClick={() => setIsAddModalOpen(false)}
                 >
-                    Ακύρωση
+                    {t('common', 'cancel')}
                 </button>
 
                 <button
@@ -669,8 +673,8 @@ function OccupantsPage() {
                     }
                 >
                     {savingOccupant
-                    ? 'Αποθήκευση...'
-                    : 'Προσθήκη'}
+                    ? t('occupants', 'saving')
+                    : t('occupants', 'addButton')}
                 </button>
                 </div>
 
@@ -696,16 +700,15 @@ function OccupantsPage() {
             <div className="occupant-modal-header">
               <div>
                 <p className="occupants-eyebrow">
-                  EDIT OCCUPANT
+                  {t('occupants', 'editOccupant')}
                 </p>
 
                 <h3>
-                  Επεξεργασία παρευρισκόμενου
+                  {t('occupants', 'editOccupantTitle')}
                 </h3>
 
                 <p>
-                  Τροποποιήστε τον ρόλο του
-                  παρευρισκόμενου.
+                  {t('occupants', 'editOccupantDescription')}
                 </p>
               </div>
 
@@ -787,8 +790,8 @@ function OccupantsPage() {
                   disabled={savingEdit}
                 >
                   {savingEdit
-                    ? 'Αποθήκευση...'
-                    : 'Αποθήκευση'}
+                    ? t('occupants', 'saving')
+                    : t('occupants', 'saveButton')}
                 </button>
               </div>
 

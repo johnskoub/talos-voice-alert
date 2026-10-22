@@ -20,22 +20,23 @@
 
 .occupants-heading h2 {
   margin: 0;
-  color: #0f172a;
+  color: var(--text-primary);
   font-size: 30px;
 }
 
 .occupants-heading p {
   margin: 7px 0 0;
-  color: #64748b;
+  color: var(--text-secondary);
 }
 
 .back-dashboard-button,
 .add-occupant-button,
 .edit-occupant-button,
 .delete-occupant-button {
-  border: 1px solid #cbd5e1;
+  border: 1px solid var(--border-color);
   border-radius: 8px;
-  background: #ffffff;
+  background: var(--button-bg);
+  color: var(--text-primary);
   padding: 10px 14px;
   font: inherit;
   font-weight: 700;
@@ -45,15 +46,18 @@
 .back-dashboard-button:hover,
 .add-occupant-button:hover,
 .edit-occupant-button:hover {
-  background: #f8fafc;
+  background: var(--bg-secondary);
 }
 
 .occupants-card {
-  border: 1px solid #dbe3ed;
+  border: 1px solid var(--border-color);
   border-radius: 14px;
-  background: #ffffff;
+  background: var(--bg-card);
   padding: 20px;
   box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+  transition:
+    background-color 0.25s ease,
+    border-color 0.25s ease;
 }
 
 .occupants-card-header {
@@ -66,12 +70,12 @@
 
 .occupants-card-header h3 {
   margin: 0;
-  color: #0f172a;
+  color: var(--text-primary);
 }
 
 .occupants-card-header p {
   margin: 5px 0 0;
-  color: #64748b;
+  color: var(--text-secondary);
   font-size: 13px;
 }
 
@@ -79,6 +83,10 @@
   background: #dc2626;
   border-color: #dc2626;
   color: #ffffff;
+}
+
+.add-occupant-button:hover {
+  background: #b91c1c;
 }
 
 .add-occupant-button:disabled {
@@ -95,17 +103,17 @@
 }
 
 .occupants-company-selector label {
-  color: #334155;
+  color: var(--text-primary);
   font-size: 12px;
   font-weight: 800;
 }
 
 .occupants-company-selector select {
-  border: 1px solid #cbd5e1;
+  border: 1px solid var(--border-color);
   border-radius: 8px;
-  background: #ffffff;
+  background: var(--input-bg);
   padding: 11px 12px;
-  color: #0f172a;
+  color: var(--text-primary);
   font: inherit;
 }
 
@@ -117,11 +125,11 @@
   margin-bottom: 16px;
   padding: 12px 14px;
   border-radius: 9px;
-  background: #f8fafc;
+  background: var(--bg-secondary);
 }
 
 .selected-company-info span {
-  color: #64748b;
+  color: var(--text-secondary);
   font-size: 13px;
 }
 
@@ -136,8 +144,8 @@
 
 .occupants-table th {
   padding: 13px 12px;
-  border-bottom: 1px solid #e2e8f0;
-  color: #64748b;
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-secondary);
   font-size: 11px;
   text-align: left;
   text-transform: uppercase;
@@ -145,8 +153,8 @@
 
 .occupants-table td {
   padding: 15px 12px;
-  border-bottom: 1px solid #e2e8f0;
-  color: #334155;
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-primary);
   font-size: 13px;
 }
 
@@ -161,8 +169,8 @@
 }
 
 .occupant-role {
-  background: #f1f5f9;
-  color: #475569;
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
 }
 
 .occupant-status {
@@ -196,12 +204,12 @@
 
 .occupants-empty h4 {
   margin: 0 0 7px;
-  color: #0f172a;
+  color: var(--text-primary);
 }
 
 .occupants-empty p {
   margin: 0;
-  color: #64748b;
+  color: var(--text-secondary);
 }
 
 .occupants-error {
@@ -211,18 +219,6 @@
   background: #fef2f2;
   padding: 13px;
   color: #b91c1c;
-}
-
-@media (max-width: 800px) {
-  .occupants-heading,
-  .occupants-card-header {
-    align-items: stretch;
-    flex-direction: column;
-  }
-
-  .occupant-actions {
-    flex-direction: column;
-  }
 }
 
 /* =========================================
@@ -238,8 +234,8 @@
 }
 
 .company-info-box {
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
   border-radius: 12px;
   padding: 18px;
 }
@@ -247,7 +243,7 @@
 .company-info-box h4 {
   margin: 0 0 14px;
   font-size: 15px;
-  color: #0f172a;
+  color: var(--text-primary);
 }
 
 .company-info-row {
@@ -256,7 +252,7 @@
   align-items: flex-start;
   gap: 20px;
   padding: 9px 0;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .company-info-row:last-child {
@@ -264,12 +260,12 @@
 }
 
 .company-info-row span {
-  color: #64748b;
+  color: var(--text-secondary);
   font-size: 13px;
 }
 
 .company-info-row strong {
-  color: #0f172a;
+  color: var(--text-primary);
   font-size: 13px;
   text-align: right;
   word-break: break-word;
@@ -288,7 +284,7 @@
 .occupant-modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(15, 23, 42, 0.45);
+  background: rgba(15, 23, 42, 0.65);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -299,10 +295,15 @@
 .occupant-modal {
   width: 100%;
   max-width: 520px;
-  background: #ffffff;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
   border-radius: 16px;
   padding: 24px;
-  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.2);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
+  transition:
+    background-color 0.25s ease,
+    border-color 0.25s ease;
 }
 
 .occupant-modal-header {
@@ -316,24 +317,29 @@
 .occupant-modal-header h3 {
   margin: 4px 0 6px;
   font-size: 22px;
-  color: #0f172a;
+  color: var(--text-primary);
 }
 
 .occupant-modal-header p:last-child {
   margin: 0;
-  color: #64748b;
+  color: var(--text-secondary);
   font-size: 14px;
 }
 
 .occupant-modal-close {
   width: 34px;
   height: 34px;
-  border: 1px solid #cbd5e1;
-  background: #ffffff;
+  border: 1px solid var(--border-color);
+  background: var(--button-bg);
   border-radius: 8px;
   font-size: 22px;
   cursor: pointer;
-  color: #475569;
+  color: var(--text-primary);
+}
+
+.occupant-modal-close:hover {
+  border-color: #dc2626;
+  color: #dc2626;
 }
 
 .occupant-form-group {
@@ -346,17 +352,17 @@
 .occupant-form-group label {
   font-size: 13px;
   font-weight: 600;
-  color: #334155;
+  color: var(--text-primary);
 }
 
 .occupant-form-group select {
   width: 100%;
   min-height: 44px;
   padding: 0 12px;
-  border: 1px solid #cbd5e1;
+  border: 1px solid var(--border-color);
   border-radius: 8px;
-  background: #ffffff;
-  color: #0f172a;
+  background: var(--input-bg);
+  color: var(--text-primary);
   font-size: 14px;
 }
 
@@ -382,9 +388,13 @@
 }
 
 .occupant-cancel-button {
-  border: 1px solid #cbd5e1;
-  background: #ffffff;
-  color: #334155;
+  border: 1px solid var(--border-color);
+  background: var(--button-bg);
+  color: var(--text-primary);
+}
+
+.occupant-cancel-button:hover {
+  background: var(--bg-secondary);
 }
 
 .occupant-save-button {
@@ -393,7 +403,23 @@
   color: #ffffff;
 }
 
+.occupant-save-button:hover {
+  background: #b91c1c;
+}
+
 .occupant-save-button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+@media (max-width: 800px) {
+  .occupants-heading,
+  .occupants-card-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .occupant-actions {
+    flex-direction: column;
+  }
 }

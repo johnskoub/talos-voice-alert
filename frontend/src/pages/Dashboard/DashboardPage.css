@@ -16,13 +16,13 @@
 
 .dashboard-heading h2 {
   margin: 0;
-  color: #0f172a;
+  color: var(--text-primary);
   font-size: 32px;
 }
 
 .dashboard-heading p:last-child {
   margin: 12px 0 0;
-  color: #64748b;
+  color: var(--text-secondary);
   line-height: 1.6;
 }
 
@@ -53,9 +53,12 @@
 
 .companies-section {
   padding: 26px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border-color);
   border-radius: 15px;
-  background: #ffffff;
+  background: var(--bg-card);
+  transition:
+    background-color 0.25s ease,
+    border-color 0.25s ease;
 }
 
 .companies-section-header {
@@ -67,13 +70,13 @@
 
 .companies-section-header h3 {
   margin: 0;
-  color: #0f172a;
+  color: var(--text-primary);
   font-size: 19px;
 }
 
 .companies-section-header p {
   margin: 6px 0 0;
-  color: #64748b;
+  color: var(--text-secondary);
   font-size: 13px;
 }
 

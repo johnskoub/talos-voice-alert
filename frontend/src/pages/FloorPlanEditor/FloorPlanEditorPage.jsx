@@ -431,7 +431,40 @@ const handleRunEvacuationAnalysis = () => {
       setSaveMessage('Αποθήκευση αλλαγών...');
 
       // ==========================================
-      // 1. SAVE FLOOR ELEMENTS
+      // 1. FIND DELETED FLOOR ELEMENTS
+      // ==========================================
+
+      const backendElements =
+        await getFloorElements(numericFloorId);
+
+      const currentBackendIds = new Set(
+        elements
+          .filter(
+            (element) =>
+              element.id !== null &&
+              element.id !== undefined &&
+              element.id !== '' &&
+              Number.isFinite(Number(element.id))
+          )
+          .map((element) => Number(element.id))
+      );
+
+      const deletedElements = backendElements.filter(
+        (backendElement) =>
+          backendElement.id !== null &&
+          backendElement.id !== undefined &&
+          !currentBackendIds.has(Number(backendElement.id))
+      );
+
+      for (const deletedElement of deletedElements) {
+        await deleteFloorElement(
+          Number(deletedElement.id)
+        );
+      }
+
+
+      // ==========================================
+      // 2. SAVE FLOOR ELEMENTS
       // ==========================================
 
       const savedElements = [];
@@ -486,7 +519,7 @@ const handleRunEvacuationAnalysis = () => {
       }
 
       // ==========================================
-      // 2. REPLACE TEMPORARY IDS WITH DB IDS
+      // 3. REPLACE TEMPORARY IDS WITH DB IDS
       // ==========================================
 
       const normalizedElements =
@@ -496,7 +529,7 @@ const handleRunEvacuationAnalysis = () => {
         }));
 
       // ==========================================
-      // 3. FIX ROUTE CONNECTION IDS
+      // 4. FIX ROUTE CONNECTION IDS
       // ==========================================
 
       const normalizedConnections =
@@ -515,7 +548,7 @@ const handleRunEvacuationAnalysis = () => {
         }));
 
       // ==========================================
-      // 4. SAVE ROUTE CONNECTIONS
+      // 5. SAVE ROUTE CONNECTIONS
       // ==========================================
 
       const savedConnections = [];
@@ -568,7 +601,7 @@ const handleRunEvacuationAnalysis = () => {
       }
 
       // ==========================================
-      // 5. UPDATE REACT STATE WITH BACKEND DATA
+      // 6. UPDATE REACT STATE WITH BACKEND DATA
       // ==========================================
 
       setElements(normalizedElements);
@@ -576,7 +609,7 @@ const handleRunEvacuationAnalysis = () => {
       setRouteConnections(savedConnections);
 
       // ==========================================
-      // 6. KEEP LOCAL STORAGE ONLY AS BACKUP
+      // 7. KEEP LOCAL STORAGE ONLY AS BACKUP
       // ==========================================
 
       saveFloorElements(
@@ -592,7 +625,7 @@ const handleRunEvacuationAnalysis = () => {
       );
 
       // ==========================================
-      // 7. SUCCESS
+      // 8. SUCCESS
       // ==========================================
 
       setSaveMessage(

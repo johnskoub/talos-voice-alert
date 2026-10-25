@@ -26,11 +26,6 @@ function Sidebar({ isOpen }) {
       icon: '⚙',
       label: t('sidebar', 'settings'),
     },
-    {
-      to: '/incidents',
-      icon: '◉',
-      label: t('sidebar', 'incidents'),
-    },
   ];
   return (
     <aside

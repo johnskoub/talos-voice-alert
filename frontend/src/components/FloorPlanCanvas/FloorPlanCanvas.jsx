@@ -1,6 +1,15 @@
 import './FloorPlanCanvas.css';
 
 function FloorPlanCanvas({ imageUrl, imageName }) {
+  const resolvedImageUrl = imageUrl
+    ? imageUrl.startsWith('/')
+      ? `http://localhost:8080${encodeURI(imageUrl)}`
+      : imageUrl
+    : null;
+
+  console.log('Floor plan image from backend:', imageUrl);
+  console.log('Resolved floor plan image URL:', resolvedImageUrl);
+
   if (!imageUrl) {
     return (
       <section className="floor-plan-canvas floor-plan-canvas--empty">
@@ -31,12 +40,14 @@ function FloorPlanCanvas({ imageUrl, imageName }) {
 
       <div className="floor-plan-image-wrapper">
         <img
-          className="floor-plan-image"
-          src={imageUrl}
+          src={resolvedImageUrl}
           alt={`Κάτοψη ${imageName}`}
         />
 
-        <div className="floor-plan-grid-overlay" aria-hidden="true" />
+        <div
+          className="floor-plan-grid-overlay"
+          aria-hidden="true"
+        />
       </div>
     </section>
   );

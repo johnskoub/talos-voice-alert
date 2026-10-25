@@ -28,6 +28,14 @@ export async function getFloor(floorId) {
   return handleResponse(response);
 }
 
+export async function getCompanyFloors(companyId) {
+  const response = await fetch(
+    `${API_BASE_URL}/companies/${companyId}/floors`
+  );
+
+  return handleResponse(response);
+}
+
 export async function updateFloorCalibration(
   floorId,
   calibration

@@ -8,9 +8,6 @@ import FloorElementProperties from '../../components/FloorElementProperties/Floo
 import EvacuationAnalysis from '../../components/EvacuationAnalysis/EvacuationAnalysis';
 import EmergencyAlert from '../../components/EmergencyAlert/EmergencyAlert';
 
-import companyMockData from '../../services/companyMockData';
-import floorMockData from '../../services/floorMockData';
-
 import {
   loadFloorElements,
   saveFloorElements,
@@ -30,13 +27,17 @@ import {
 } from '../../services/routeConnectionStorage';
 
 import { 
+  getCompany,
   getFloor,
   getFloorElements,
   getRouteConnections,
-  updateFloorElement,
   updateFloorCalibration,
-  createRouteConnection,
   createFloorElement,
+  updateFloorElement,
+  deleteFloorElement,
+  createRouteConnection,
+  updateRouteConnection,
+  deleteRouteConnection,
  } from '../../services/api';
 
 import './FloorPlanEditorPage.css';
@@ -55,6 +56,7 @@ function FloorPlanEditorPage() {
 
   const [elements, setElements] = useState([]);
   const [backendFloor, setBackendFloor] = useState(null);
+  const [backendCompany, setBackendCompany] = useState(null);
 
   const [calibrationSaving, setCalibrationSaving] =
   useState(false);
@@ -96,22 +98,23 @@ function FloorPlanEditorPage() {
   useEffect(() => {
     const loadBackendData = async () => {
       try {
+        setElementsLoading(true);
+        setElementsLoadError('');
+
         const [
+          backendCompanyData,
           backendFloorData,
           backendElements,
           backendConnections,
         ] = await Promise.all([
+          getCompany(numericCompanyId),
           getFloor(numericFloorId),
           getFloorElements(numericFloorId),
           getRouteConnections(numericFloorId),
         ]);
 
+        setBackendCompany(backendCompanyData);
         setBackendFloor(backendFloorData);
-
-        console.log(
-          'TALOS backend floor:',
-          backendFloorData
-        );
 
         setElements(
           Array.isArray(backendElements)
@@ -126,6 +129,16 @@ function FloorPlanEditorPage() {
         );
 
         console.log(
+          'TALOS backend company:',
+          backendCompanyData
+        );
+
+        console.log(
+          'TALOS backend floor:',
+          backendFloorData
+        );
+
+        console.log(
           'TALOS backend elements:',
           backendElements
         );
@@ -134,35 +147,43 @@ function FloorPlanEditorPage() {
           'TALOS backend route connections:',
           backendConnections
         );
+
       } catch (error) {
         console.error(
           'Failed to load floor data from backend:',
           error
         );
 
-        setSaveMessage(
-          'Σφάλμα φόρτωσης των δεδομένων από το backend.'
+        setElementsLoadError(
+          error.message ||
+          'Failed to load floor data.'
         );
+      } finally {
+        setElementsLoading(false);
       }
     };
 
     loadBackendData();
-  }, [numericFloorId]);
+  }, [numericCompanyId, numericFloorId]);
 
-  const company = companyMockData.find(
-    (item) => item.id === numericCompanyId
-  );
-
-  const floor = floorMockData.find(
-    (item) =>
-      item.id === numericFloorId &&
-      item.companyId === numericCompanyId
-  );
+  const company = backendCompany;
+  const floor = backendFloor;
 
   const storedFloorPlan = loadFloorPlanFromSession(
     numericCompanyId,
     numericFloorId
   );
+
+  const editorFloorPlan =
+  storedFloorPlan ||
+  (backendFloor?.floorPlanImage
+    ? {
+        imageDataUrl: backendFloor.floorPlanImage,
+        imageName:
+          backendFloor.floorPlanImage.split('/').pop() ||
+          'floor-plan',
+      }
+    : null);
 
   const selectedElement = elements.find(
     (element) => element.id === selectedElementId
@@ -635,7 +656,21 @@ const handleRunEvacuationAnalysis = () => {
     setPendingRouteNodeId(null);
   };
 
-  if (!company || !floor || !storedFloorPlan) {
+  if (elementsLoading) {
+    return (
+      <PageContainer>
+        <section className="floor-editor-unavailable">
+          <h2>Φόρτωση Floor Plan Editor...</h2>
+          <p>
+            Γίνεται φόρτωση της κάτοψης και των δεδομένων
+            του ορόφου.
+          </p>
+        </section>
+      </PageContainer>
+    );
+  }
+
+  if (!company || !floor || !editorFloorPlan) {
     return (
       <PageContainer>
         <section className="floor-editor-unavailable">
@@ -718,8 +753,8 @@ const handleRunEvacuationAnalysis = () => {
         />
 
         <FloorEditorCanvas
-          imageUrl={storedFloorPlan.imageDataUrl}
-          imageName={storedFloorPlan.imageName}
+          imageUrl={editorFloorPlan.imageDataUrl}
+          imageName={editorFloorPlan.imageName}
           activeTool={activeTool}
           elements={elements}
           onElementsChange={handleElementsChange}

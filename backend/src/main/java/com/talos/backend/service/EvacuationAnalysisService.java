@@ -6,6 +6,7 @@ import com.talos.backend.repository.FloorElementRepository;
 import com.talos.backend.repository.RouteConnectionRepository;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.*;
 
 @Service
@@ -13,13 +14,16 @@ public class EvacuationAnalysisService {
 
     private final FloorElementRepository floorElementRepository;
     private final RouteConnectionRepository routeConnectionRepository;
+    private final PathfindingService pathfindingService;
 
     public EvacuationAnalysisService(
             FloorElementRepository floorElementRepository,
-            RouteConnectionRepository routeConnectionRepository
+            RouteConnectionRepository routeConnectionRepository,
+            PathfindingService pathfindingService
     ) {
         this.floorElementRepository = floorElementRepository;
         this.routeConnectionRepository = routeConnectionRepository;
+        this.pathfindingService = pathfindingService;
     }
 
     public Map<String, Object> analyzeFloor(Long floorId) {
@@ -35,6 +39,10 @@ public class EvacuationAnalysisService {
         List<FloorElement> routeNodes = new ArrayList<>();
         List<FloorElement> firePoints = new ArrayList<>();
 
+        // ==========================================
+        // ΚΑΤΗΓΟΡΙΟΠΟΙΗΣΗ FLOOR ELEMENTS
+        // ==========================================
+
         for (FloorElement element : elements) {
 
             if (element.getType() == null) {
@@ -44,6 +52,7 @@ public class EvacuationAnalysisService {
             switch (element.getType().toUpperCase()) {
 
                 case "EMPLOYEE":
+                case "OCCUPANT":
                     employees.add(element);
                     break;
 
@@ -64,38 +73,59 @@ public class EvacuationAnalysisService {
             }
         }
 
+        // ==========================================
+        // ΔΙΑΘΕΣΙΜΕΣ ΕΞΟΔΟΙ
+        // ==========================================
+
         List<FloorElement> availableExits = new ArrayList<>();
 
         for (FloorElement exit : exits) {
 
             boolean available =
-                    exit.getActive() != null
-                            && exit.getActive()
+                    Boolean.TRUE.equals(exit.getActive())
                             && !Boolean.TRUE.equals(exit.getDisabled())
-                            && !"UNAVAILABLE".equalsIgnoreCase(exit.getStatus());
+                            && !"UNAVAILABLE".equalsIgnoreCase(
+                                    exit.getStatus()
+                            );
 
             if (available) {
                 availableExits.add(exit);
             }
         }
 
-        List<RouteConnection> availableConnections = new ArrayList<>();
+        // ==========================================
+        // ΔΙΑΘΕΣΙΜΕΣ ΣΥΝΔΕΣΕΙΣ
+        // ==========================================
+
+        List<RouteConnection> availableConnections =
+                new ArrayList<>();
 
         for (RouteConnection connection : connections) {
 
             boolean available =
-                    connection.getActive() != null
-                            && connection.getActive()
-                            && !"UNAVAILABLE".equalsIgnoreCase(connection.getStatus());
+                    Boolean.TRUE.equals(connection.getActive())
+                            && !"UNAVAILABLE".equalsIgnoreCase(
+                                    connection.getStatus()
+                            );
 
             if (available) {
                 availableConnections.add(connection);
             }
         }
 
-        Map<Long, List<Long>> graph = buildGraph(availableConnections);
+        // ==========================================
+        // GRAPH
+        // ==========================================
 
-        Map<String, Object> result = new LinkedHashMap<>();
+        Map<Long, List<Long>> graph =
+                buildGraph(availableConnections);
+
+        // ==========================================
+        // ΒΑΣΙΚΑ ΑΠΟΤΕΛΕΣΜΑΤΑ
+        // ==========================================
+
+        Map<String, Object> result =
+                new LinkedHashMap<>();
 
         result.put("floorId", floorId);
         result.put("employees", employees.size());
@@ -103,51 +133,82 @@ public class EvacuationAnalysisService {
         result.put("availableExits", availableExits.size());
         result.put("routeNodes", routeNodes.size());
         result.put("firePoints", firePoints.size());
-        result.put("availableConnections", availableConnections.size());
+        result.put(
+                "availableConnections",
+                availableConnections.size()
+        );
+
+        // ==========================================
+        // NORMAL
+        // ==========================================
 
         if (firePoints.isEmpty()) {
 
             result.put("status", "NORMAL");
+
             result.put(
                     "message",
-                    "Δεν έχει εντοπιστεί ενεργό σημείο κινδύνου."
+                    "Δεν έχει εντοπιστεί ενεργός κίνδυνος."
             );
 
             return result;
         }
 
+        // ==========================================
+        // NO SAFE EXIT
+        // ==========================================
+
         if (availableExits.isEmpty()) {
 
-            result.put("status", "NO_SAFE_EXIT");
+            result.put(
+                    "status",
+                    "NO_SAFE_EXIT"
+            );
+
             result.put(
                     "message",
-                    "Δεν υπάρχει διαθέσιμη έξοδος εκκένωσης."
+                    "Δεν υπάρχει διαθέσιμη ασφαλής έξοδος."
             );
 
             result.put(
                     "instruction",
-                    "Παραμείνετε στον χώρο, κλείστε τις πόρτες και μην χρησιμοποιήσετε τους ανελκυστήρες."
+                    "Παραμείνετε στον χώρο, ακολουθήστε τις οδηγίες ασφαλείας και μην χρησιμοποιήσετε μη διαθέσιμες εξόδους."
             );
 
             return result;
         }
+
+        // ==========================================
+        // NO ROUTE
+        // ==========================================
 
         if (availableConnections.isEmpty()) {
 
-            result.put("status", "NO_ROUTE");
+            result.put(
+                    "status",
+                    "NO_ROUTE"
+            );
+
             result.put(
                     "message",
-                    "Υπάρχει διαθέσιμη έξοδος, αλλά δεν υπάρχει διαθέσιμο route connection."
+                    "Υπάρχει κίνδυνος, αλλά δεν υπάρχει διαθέσιμη διαδρομή εκκένωσης."
             );
 
             return result;
         }
 
-        result.put("status", "EVACUATION_REQUIRED");
+        // ==========================================
+        // EVACUATION REQUIRED
+        // ==========================================
+
+        result.put(
+                "status",
+                "EVACUATION_REQUIRED"
+        );
 
         result.put(
                 "message",
-                "Εντοπίστηκε κίνδυνος. Υπάρχει διαθέσιμη διαδρομή εκκένωσης."
+                "Εντοπίστηκε κίνδυνος. Υπολογίζεται η βέλτιστη διαδρομή εκκένωσης."
         );
 
         result.put(
@@ -155,29 +216,312 @@ public class EvacuationAnalysisService {
                 graph.size()
         );
 
+        // ==========================================
+        // DIJKSTRA ΓΙΑ ΚΑΘΕ ΕΡΓΑΖΟΜΕΝΟ
+        // ==========================================
+
+        List<Map<String, Object>> evacuationRoutes =
+                new ArrayList<>();
+
+        for (FloorElement employee : employees) {
+
+            FloorElement nearestEmployeeNode =
+                    findNearestRouteNode(
+                            employee,
+                            routeNodes
+                    );
+
+            if (nearestEmployeeNode == null) {
+                continue;
+            }
+
+            Map<String, Object> bestRoute =
+                    findBestExit(
+                            employee,
+                            nearestEmployeeNode,
+                            availableExits,
+                            routeNodes,
+                            availableConnections
+                    );
+
+            if (bestRoute != null) {
+                evacuationRoutes.add(bestRoute);
+            }
+        }
+
+        result.put(
+                "evacuationRoutes",
+                evacuationRoutes
+        );
+
         return result;
     }
+
+    // =====================================================
+    // ΒΡΙΣΚΕΙ ΤΟ ΚΟΝΤΙΝΟΤΕΡΟ ROUTE NODE
+    // =====================================================
+
+    private FloorElement findNearestRouteNode(
+            FloorElement element,
+            List<FloorElement> routeNodes
+    ) {
+
+        FloorElement nearest = null;
+        double minimumDistance =
+                Double.POSITIVE_INFINITY;
+
+        for (FloorElement node : routeNodes) {
+
+            double distance =
+                    calculateDistance(
+                            element,
+                            node
+                    );
+
+            if (distance < minimumDistance) {
+
+                minimumDistance = distance;
+                nearest = node;
+            }
+        }
+
+        return nearest;
+    }
+
+    // =====================================================
+    // ΒΡΙΣΚΕΙ ΤΗΝ ΚΑΛΥΤΕΡΗ ΕΞΟΔΟ ΜΕ DIJKSTRA
+    // =====================================================
+
+    private Map<String, Object> findBestExit(
+            FloorElement employee,
+            FloorElement employeeNode,
+            List<FloorElement> exits,
+            List<FloorElement> routeNodes,
+            List<RouteConnection> connections
+    ) {
+
+        Map<String, Object> bestRoute = null;
+
+        double bestDistance =
+                Double.POSITIVE_INFINITY;
+
+        for (FloorElement exit : exits) {
+
+            FloorElement exitNode =
+                    findNearestRouteNode(
+                            exit,
+                            routeNodes
+                    );
+
+            if (exitNode == null) {
+                continue;
+            }
+
+            List<Long> path =
+                    pathfindingService.findShortestPath(
+                            employeeNode.getId(),
+                            exitNode.getId(),
+                            connections,
+                            routeNodes
+                    );
+
+            if (path.isEmpty()) {
+                continue;
+            }
+
+            double routeDistance =
+                    calculatePathDistance(
+                            path,
+                            routeNodes
+                    );
+
+            /*
+             * Προσθέτουμε και την απόσταση:
+             *
+             * Employee → πρώτο Route Node
+             *
+             * και
+             *
+             * τελευταίο Route Node → Exit
+             */
+
+            double employeeToNode =
+                    calculateDistance(
+                            employee,
+                            employeeNode
+                    );
+
+            double nodeToExit =
+                    calculateDistance(
+                            exitNode,
+                            exit
+                    );
+
+            double totalDistance =
+                    employeeToNode
+                            + routeDistance
+                            + nodeToExit;
+
+            if (totalDistance < bestDistance) {
+
+                bestDistance = totalDistance;
+
+                bestRoute =
+                        new LinkedHashMap<>();
+
+                bestRoute.put(
+                        "employeeId",
+                        employee.getId()
+                );
+
+                bestRoute.put(
+                        "employeeName",
+                        employee.getName()
+                );
+
+                bestRoute.put(
+                        "startNodeId",
+                        employeeNode.getId()
+                );
+
+                bestRoute.put(
+                        "exitId",
+                        exit.getId()
+                );
+
+                bestRoute.put(
+                        "exitName",
+                        exit.getName()
+                );
+
+                bestRoute.put(
+                        "distance",
+                        totalDistance
+                );
+
+                bestRoute.put(
+                        "path",
+                        path
+                );
+            }
+        }
+
+        return bestRoute;
+    }
+
+    // =====================================================
+    // ΣΥΝΟΛΙΚΗ ΑΠΟΣΤΑΣΗ ROUTE
+    // =====================================================
+
+    private double calculatePathDistance(
+            List<Long> path,
+            List<FloorElement> routeNodes
+    ) {
+
+        double total = 0.0;
+
+        Map<Long, FloorElement> nodeMap =
+                new HashMap<>();
+
+        for (FloorElement node : routeNodes) {
+
+            if (node.getId() != null) {
+                nodeMap.put(
+                        node.getId(),
+                        node
+                );
+            }
+        }
+
+        for (int i = 0; i < path.size() - 1; i++) {
+
+            FloorElement first =
+                    nodeMap.get(path.get(i));
+
+            FloorElement second =
+                    nodeMap.get(path.get(i + 1));
+
+            if (first == null || second == null) {
+                continue;
+            }
+
+            total += calculateDistance(
+                    first,
+                    second
+            );
+        }
+
+        return total;
+    }
+
+    // =====================================================
+    // ΕΥΚΛΕΙΔΕΙΑ ΑΠΟΣΤΑΣΗ
+    // =====================================================
+
+    private double calculateDistance(
+            FloorElement first,
+            FloorElement second
+    ) {
+
+        BigDecimal x1 = first.getX();
+        BigDecimal y1 = first.getY();
+
+        BigDecimal x2 = second.getX();
+        BigDecimal y2 = second.getY();
+
+        if (x1 == null
+                || y1 == null
+                || x2 == null
+                || y2 == null) {
+
+            return Double.POSITIVE_INFINITY;
+        }
+
+        double dx =
+                x1.doubleValue()
+                        - x2.doubleValue();
+
+        double dy =
+                y1.doubleValue()
+                        - y2.doubleValue();
+
+        return Math.sqrt(
+                dx * dx + dy * dy
+        );
+    }
+
+    // =====================================================
+    // BUILD GRAPH
+    // =====================================================
 
     private Map<Long, List<Long>> buildGraph(
             List<RouteConnection> connections
     ) {
 
-        Map<Long, List<Long>> graph = new HashMap<>();
+        Map<Long, List<Long>> graph =
+                new HashMap<>();
 
         for (RouteConnection connection : connections) {
 
-            Long from = connection.getFromNodeId();
-            Long to = connection.getToNodeId();
+            Long from =
+                    connection.getFromNodeId();
+
+            Long to =
+                    connection.getToNodeId();
 
             if (from == null || to == null) {
                 continue;
             }
 
-            graph.computeIfAbsent(from, key -> new ArrayList<>())
-                    .add(to);
+            graph.computeIfAbsent(
+                    from,
+                    key -> new ArrayList<>()
+            ).add(to);
 
-            graph.computeIfAbsent(to, key -> new ArrayList<>())
-                    .add(from);
+            graph.computeIfAbsent(
+                    to,
+                    key -> new ArrayList<>()
+            ).add(from);
         }
 
         return graph;

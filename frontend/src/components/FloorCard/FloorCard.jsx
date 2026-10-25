@@ -1,27 +1,40 @@
 import './FloorCard.css';
 
-const floorStatusLabels = {
-  READY: 'Έτοιμη κάτοψη',
-  DRAFT: 'Σε επεξεργασία',
-  NOT_STARTED: 'Χωρίς κάτοψη',
-};
-
 function FloorCard({ floor, onSelect }) {
   const handleOpenFloor = () => {
     onSelect(floor.id);
+  };
+
+  // =========================================
+  // FLOOR PLAN STATUS
+  // =========================================
+
+  const hasFloorPlan =
+    floor.floorPlanImage &&
+    floor.floorPlanImage.trim() !== '';
+
+  const floorPlanStatus = hasFloorPlan
+    ? 'READY'
+    : 'NOT_STARTED';
+
+  const floorStatusLabels = {
+    READY: 'Έτοιμη κάτοψη',
+    NOT_STARTED: 'Χωρίς κάτοψη',
   };
 
   return (
     <article className="floor-card">
       <div className="floor-card-top">
         <div className="floor-number">
-          {floor.floorNumber === 0 ? 'G' : floor.floorNumber}
+          {floor.floorNumber === 0
+            ? 'G'
+            : floor.floorNumber}
         </div>
 
         <span
-          className={`floor-plan-status floor-plan-status--${floor.floorPlanStatus.toLowerCase()}`}
+          className={`floor-plan-status floor-plan-status--${floorPlanStatus.toLowerCase()}`}
         >
-          {floorStatusLabels[floor.floorPlanStatus]}
+          {floorStatusLabels[floorPlanStatus]}
         </span>
       </div>
 
@@ -31,17 +44,23 @@ function FloorCard({ floor, onSelect }) {
         <div className="floor-statistics">
           <div>
             <span>Περιοχές</span>
-            <strong>{floor.zoneCount}</strong>
+            <strong>
+              {floor.zoneCount ?? 0}
+            </strong>
           </div>
 
           <div>
             <span>Έξοδοι</span>
-            <strong>{floor.exitCount}</strong>
+            <strong>
+              {floor.exitCount ?? 0}
+            </strong>
           </div>
 
           <div>
             <span>Παρευρισκόμενοι</span>
-            <strong>{floor.occupantCount}</strong>
+            <strong>
+              {floor.occupantCount ?? 0}
+            </strong>
           </div>
         </div>
       </div>
@@ -52,7 +71,10 @@ function FloorCard({ floor, onSelect }) {
         onClick={handleOpenFloor}
       >
         Άνοιγμα ορόφου
-        <span aria-hidden="true">→</span>
+
+        <span aria-hidden="true">
+          →
+        </span>
       </button>
     </article>
   );

@@ -63,6 +63,18 @@ function clampPercentage(value) {
   return Math.min(100, Math.max(0, value));
 }
 
+function resolveImageUrl(imageUrl) {
+  if (!imageUrl) {
+    return '';
+  }
+
+  if (imageUrl.startsWith('/')) {
+    return `http://localhost:8080${imageUrl}`;
+  }
+
+  return imageUrl;
+}
+
 function clampValue(value, minimum, maximum) {
   return Math.min(maximum, Math.max(minimum, value));
 }
@@ -88,6 +100,7 @@ function FloorEditorCanvas({
   
 }) {
   const imageRef = useRef(null);
+  const resolvedImageUrl = resolveImageUrl(imageUrl);
 
   const [draggingElementId, setDraggingElementId] = useState(null);
   const [draftZone, setDraftZone] = useState(null);
@@ -925,7 +938,7 @@ const handleZoneResizePointerUp = (event, zoneId) => {
         >
           <img
             ref={imageRef}
-            src={imageUrl}
+            src={resolvedImageUrl}
             alt={`Κάτοψη ${imageName}`}
             draggable="false"
             onLoad={(event) => {

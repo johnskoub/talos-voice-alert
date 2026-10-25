@@ -55,12 +55,6 @@ function App() {
             path="/settings"
             element={<SettingsPage />}
           />
-
-          <Route
-            path="/incidents"
-            element={<div>Συμβάντα & Ιστορικό</div>}
-          />
-
         </Route>
 
         <Route path="*" element={<Navigate to="/sign-in" replace />} />

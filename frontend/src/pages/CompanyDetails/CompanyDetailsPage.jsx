@@ -1,41 +1,105 @@
+import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import PageContainer from '../../components/PageContainer/PageContainer';
 import FloorGrid from '../../components/FloorGrid/FloorGrid';
-import companyMockData from '../../services/companyMockData';
-import floorMockData from '../../services/floorMockData';
+import {
+getCompany,
+getCompanyFloors,
+getCompanyUsers,
+} from '../../services/api';
 import './CompanyDetailsPage.css';
 
 function CompanyDetailsPage() {
   const { companyId } = useParams();
   const navigate = useNavigate();
 
+  const [company, setCompany] = useState(null);
+  const [companyFloors, setCompanyFloors] = useState([]);
+  const [occupantCount, setOccupantCount] = useState(0);
+
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
   const numericCompanyId = Number(companyId);
 
-  const company = companyMockData.find(
-    (item) => item.id === numericCompanyId
-  );
+  useEffect(() => {
+    const loadCompanyData = async () => {
+      try {
+        setLoading(true);
+        setError('');
 
-  const companyFloors = floorMockData.filter(
-    (floor) => floor.companyId === numericCompanyId
-  );
+      const [companyData, floorsData, usersData] =
+        await Promise.all([
+          getCompany(numericCompanyId),
+          getCompanyFloors(numericCompanyId),
+          getCompanyUsers(numericCompanyId),
+        ]);
+
+      setCompany(companyData);
+      setCompanyFloors(floorsData || []);
+      setOccupantCount(
+       Array.isArray(usersData)
+          ? usersData.length
+          : 0
+        );
+      } catch (err) {
+        console.error(
+          'Error loading company details:',
+          err
+        );
+
+        setError(
+          'Δεν ήταν δυνατή η φόρτωση των στοιχείων της επιχείρησης.'
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (!Number.isNaN(numericCompanyId)) {
+      loadCompanyData();
+    }
+  }, [numericCompanyId]);
 
   const handleFloorSelect = (floorId) => {
-    navigate(`/companies/${numericCompanyId}/floors/${floorId}`);
+    navigate(
+      `/companies/${numericCompanyId}/floors/${floorId}`
+    );
   };
 
-  if (!company) {
+  if (loading) {
     return (
       <PageContainer>
         <section className="company-not-found">
-          <h2>Η επιχείρηση δεν βρέθηκε</h2>
+        <h2>Φόρτωση επιχείρησης...</h2>
+        </section>
+      </PageContainer>
+    );
+  }
 
-          <button type="button" onClick={() => navigate('/dashboard')}>
+  if (error || !company) {
+    return (
+    <PageContainer>
+    <section className="company-not-found">
+    <h2>
+    {error || 'Η επιχείρηση δεν βρέθηκε'}
+    </h2>
+    <button
+            type="button"
+            onClick={() => navigate('/dashboard')}
+          >
             Επιστροφή στο Dashboard
           </button>
         </section>
       </PageContainer>
     );
   }
+
+  const readyFloorCount = companyFloors.filter(
+    (floor) =>
+    floor.floorPlanImage &&
+    floor.floorPlanImage.trim() !== ''
+  ).length;
 
   return (
     <PageContainer>
@@ -48,17 +112,21 @@ function CompanyDetailsPage() {
           >
             ← Επιστροφή στις επιχειρήσεις
           </button>
-
-          <p className="company-details-eyebrow">COMPANY DETAILS</p>
+          <p className="company-details-eyebrow">
+              COMPANY DETAILS
+          </p>
 
           <h2>{company.name}</h2>
 
           <p className="company-details-address">
-            {company.address}, {company.city}
+            {company.address}
           </p>
         </div>
 
-        <button className="add-floor-button" type="button">
+        <button
+          className="add-floor-button"
+          type="button"
+        >
           <span aria-hidden="true">+</span>
           Προσθήκη ορόφου
         </button>
@@ -67,29 +135,35 @@ function CompanyDetailsPage() {
       <section className="company-summary">
         <div>
           <span>Κατάσταση</span>
+
           <strong>
-            {company.status === 'ACTIVE' ? 'Ενεργή' : 'Ανενεργή'}
+            {company.active
+              ? 'Ενεργή'
+              : 'Ανενεργή'}
           </strong>
         </div>
 
         <div>
           <span>Όροφοι</span>
-          <strong>{companyFloors.length}</strong>
+
+          <strong>
+            {companyFloors.length}
+          </strong>
         </div>
 
         <div>
           <span>Παρευρισκόμενοι</span>
-          <strong>{company.occupantCount}</strong>
+
+          <strong>
+            {occupantCount}
+          </strong>
         </div>
 
         <div>
           <span>Έτοιμες κατόψεις</span>
+
           <strong>
-            {
-              companyFloors.filter(
-                (floor) => floor.floorPlanStatus === 'READY'
-              ).length
-            }
+            {readyFloorCount}
           </strong>
         </div>
       </section>
@@ -98,9 +172,10 @@ function CompanyDetailsPage() {
         <div className="floors-section-header">
           <div>
             <h3>Όροφοι επιχείρησης</h3>
+
             <p>
-              Επιλέξτε έναν όροφο για να ανοίξετε την κάτοψη και τα
-              στοιχεία ασφαλείας του.
+              Επιλέξτε έναν όροφο για να ανοίξετε την
+              κάτοψη και τα στοιχεία ασφαλείας του.
             </p>
           </div>
         </div>

@@ -98,10 +98,10 @@
 .sign-out-button {
   min-height: 40px;
   padding: 0 15px;
-  border: 1px solid var(--border-color);
+  border: 1px solid #cbd5e1;
   border-radius: 8px;
   background: var(--button-bg);
-  color: var(--button-bg);
+  color: var(--text-primary);
   font: inherit;
   font-size: 13px;
   font-weight: 700;

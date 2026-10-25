@@ -6,6 +6,7 @@ import {
 getCompany,
 getCompanyFloors,
 getCompanyUsers,
+createFloor,
 } from '../../services/api';
 import './CompanyDetailsPage.css';
 
@@ -17,7 +18,26 @@ function CompanyDetailsPage() {
   const [companyFloors, setCompanyFloors] = useState([]);
   const [occupantCount, setOccupantCount] = useState(0);
 
+  const [showAddFloorForm, setShowAddFloorForm] =
+    useState(false);
+
+  const [newFloorName, setNewFloorName] =
+    useState('');
+
+  const [newFloorNumber, setNewFloorNumber] =
+    useState('');
+
+  const [newFloorDescription, setNewFloorDescription] =
+    useState('');
+
+  const [creatingFloor, setCreatingFloor] =
+    useState(false);
+
+  const [createFloorError, setCreateFloorError] =
+    useState('');
+
   const [loading, setLoading] = useState(true);
+
   const [error, setError] = useState('');
 
   const numericCompanyId = Number(companyId);
@@ -65,6 +85,50 @@ function CompanyDetailsPage() {
     navigate(
       `/companies/${numericCompanyId}/floors/${floorId}`
     );
+  };
+
+  const handleCreateFloor = async (event) => {
+    event.preventDefault();
+
+    try {
+      setCreatingFloor(true);
+      setCreateFloorError('');
+
+      const createdFloor = await createFloor(
+        numericCompanyId,
+        {
+          name: newFloorName.trim(),
+          floorNumber: Number(newFloorNumber),
+          description: newFloorDescription.trim(),
+          floorPlanImage: null,
+          active: true,
+        }
+      );
+
+      setCompanyFloors((currentFloors) => [
+        ...currentFloors,
+        createdFloor,
+      ]);
+
+      setNewFloorName('');
+      setNewFloorNumber('');
+      setNewFloorDescription('');
+
+      setShowAddFloorForm(false);
+
+    } catch (err) {
+      console.error(
+        'Error creating floor:',
+        err
+      );
+
+      setCreateFloorError(
+        err.message ||
+        'Αποτυχία δημιουργίας ορόφου.'
+      );
+    } finally {
+      setCreatingFloor(false);
+    }
   };
 
   if (loading) {
@@ -126,6 +190,10 @@ function CompanyDetailsPage() {
         <button
           className="add-floor-button"
           type="button"
+          onClick={() => {
+            setCreateFloorError('');
+            setShowAddFloorForm(true);
+          }}
         >
           <span aria-hidden="true">+</span>
           Προσθήκη ορόφου
@@ -185,6 +253,140 @@ function CompanyDetailsPage() {
           onFloorSelect={handleFloorSelect}
         />
       </section>
+
+      {showAddFloorForm && (
+        <div className="add-floor-modal-overlay">
+          <div
+            className="add-floor-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="add-floor-modal-title"
+          >
+
+            <div className="add-floor-modal-header">
+              <div>
+                <p className="company-details-eyebrow">
+                  ΝΕΟΣ ΟΡΟΦΟΣ
+                </p>
+
+                <h3 id="add-floor-modal-title">
+                  Προσθήκη ορόφου
+                </h3>
+              </div>
+
+              <button
+                type="button"
+                className="add-floor-modal-close"
+                onClick={() => {
+                  setShowAddFloorForm(false);
+                  setCreateFloorError('');
+                }}
+                disabled={creatingFloor}
+                aria-label="Κλείσιμο"
+              >
+                ×
+              </button>
+            </div>
+
+            <p className="add-floor-modal-description">
+              Συμπληρώστε τα στοιχεία του νέου ορόφου.
+            </p>
+
+            <form onSubmit={handleCreateFloor}>
+
+              <div className="add-floor-form-grid">
+
+                <div className="add-floor-field">
+                  <label htmlFor="floor-name">
+                    Όνομα ορόφου
+                  </label>
+
+                  <input
+                    id="floor-name"
+                    type="text"
+                    value={newFloorName}
+                    onChange={(event) =>
+                      setNewFloorName(event.target.value)
+                    }
+                    placeholder="π.χ. Second Floor"
+                    required
+                  />
+                </div>
+
+                <div className="add-floor-field">
+                  <label htmlFor="floor-number">
+                    Αριθμός ορόφου
+                  </label>
+
+                  <input
+                    id="floor-number"
+                    type="number"
+                    value={newFloorNumber}
+                    onChange={(event) =>
+                      setNewFloorNumber(event.target.value)
+                    }
+                    placeholder="π.χ. 2"
+                    required
+                  />
+                </div>
+
+                <div className="add-floor-field add-floor-field-full">
+                  <label htmlFor="floor-description">
+                    Περιγραφή
+                  </label>
+
+                  <textarea
+                    id="floor-description"
+                    value={newFloorDescription}
+                    onChange={(event) =>
+                      setNewFloorDescription(
+                        event.target.value
+                      )
+                    }
+                    placeholder="Προαιρετική περιγραφή..."
+                    rows="3"
+                  />
+                </div>
+
+              </div>
+
+              {createFloorError && (
+                <p className="add-floor-error">
+                  {createFloorError}
+                </p>
+              )}
+
+              <div className="add-floor-form-actions">
+
+                <button
+                  type="button"
+                  className="add-floor-cancel-button"
+                  onClick={() => {
+                    setShowAddFloorForm(false);
+                    setCreateFloorError('');
+                  }}
+                  disabled={creatingFloor}
+                >
+                  Ακύρωση
+                </button>
+
+                <button
+                  type="submit"
+                  className="add-floor-submit-button"
+                  disabled={creatingFloor}
+                >
+                  {creatingFloor
+                    ? 'Δημιουργία...'
+                    : 'Δημιουργία ορόφου'}
+                </button>
+
+              </div>
+
+            </form>
+          </div>
+        </div>
+      )}
+
     </PageContainer>
   );
 }

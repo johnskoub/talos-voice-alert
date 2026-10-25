@@ -24,7 +24,7 @@ public class Floor {
     @Column(length = 500)
     private String description;
 
-    @Column(name = "floor_plan_image", length = 500)
+    @Column(name = "floor_plan_image", columnDefinition = "LONGTEXT")
     private String floorPlanImage;
 
     /*

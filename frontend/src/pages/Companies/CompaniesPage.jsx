@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router';
 import PageContainer from '../../components/PageContainer/PageContainer';
 import {
   getCompanies,
+  getCompanyFloors,
   createCompany,
   updateCompany,
   deleteCompany,
@@ -47,9 +48,43 @@ function CompaniesPage() {
 
       const data = await getCompanies();
 
-      setCompanies(Array.isArray(data) ? data : []);
+      if (!Array.isArray(data)) {
+        setCompanies([]);
+        return;
+      }
+
+      const companiesWithFloorCount = await Promise.all(
+        data.map(async (company) => {
+          try {
+            const floors = await getCompanyFloors(company.id);
+
+            return {
+              ...company,
+              floorCount: Array.isArray(floors)
+                ? floors.length
+                : 0,
+            };
+          } catch (error) {
+            console.error(
+              `Failed to load floors for company ${company.id}:`,
+              error
+            );
+
+            return {
+              ...company,
+              floorCount: 0,
+            };
+          }
+        })
+      );
+
+      setCompanies(companiesWithFloorCount);
     } catch (error) {
-      console.error('Failed to load companies:', error);
+      console.error(
+        'Failed to load companies:',
+        error
+      );
+
       setError(
         t('companyManagement', 'loadError')
       );
@@ -319,7 +354,7 @@ function CompaniesPage() {
                             'floors'
                           )}
                           :{' '}
-                          {company.floors || 0}
+                          {company.floorCount ?? 0}
                         </span>
 
                         <span>

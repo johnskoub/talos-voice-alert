@@ -8,6 +8,7 @@ import FloorPlanCanvas from '../../components/FloorPlanCanvas/FloorPlanCanvas';
 import {
   getCompany,
   getFloor,
+  updateFloor,
 } from '../../services/api';
 
 import {
@@ -127,18 +128,46 @@ function FloorDetailsPage() {
       const imageDataUrl =
         await readImageFileAsDataUrl(selectedFile);
 
+      // Save image to backend/database
+      const updatedFloor = await updateFloor(
+        numericFloorId,
+        {
+          ...floor,
+          floorPlanImage: imageDataUrl,
+        }
+      );
+
+      // Update React state with backend data
+      setFloor(updatedFloor);
+
+      setFloorPlanImage(
+        updatedFloor?.floorPlanImage || imageDataUrl
+      );
+
+      setFloorPlanImageName(selectedFile.name);
+
+      // Keep session storage as backup
       saveFloorPlanToSession({
         companyId: numericCompanyId,
         floorId: numericFloorId,
-        imageDataUrl,
+        imageDataUrl:
+          updatedFloor?.floorPlanImage || imageDataUrl,
         imageName: selectedFile.name,
       });
 
-      setFloorPlanImage(imageDataUrl);
-      setFloorPlanImageName(selectedFile.name);
+      console.log(
+        'TALOS floor plan image saved:',
+        selectedFile.name
+      );
     } catch (err) {
+      console.error(
+        'Failed to save floor plan image:',
+        err
+      );
+
       setUploadError(
-        err.message || 'Αποτυχία φόρτωσης εικόνας.'
+        err.message ||
+          'Αποτυχία αποθήκευσης της εικόνας κάτοψης.'
       );
     }
   };

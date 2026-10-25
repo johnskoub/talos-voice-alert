@@ -36,6 +36,39 @@ export async function getCompanyFloors(companyId) {
   return handleResponse(response);
 }
 
+export async function createFloor(companyId, floor) {
+  const response = await fetch(
+    `${API_BASE_URL}/companies/${companyId}/floors`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(floor),
+    }
+  );
+
+  return handleResponse(response);
+}
+
+export async function updateFloor(
+  floorId,
+  floor
+) {
+  const response = await fetch(
+    `${API_BASE_URL}/floors/${floorId}`,
+    {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(floor),
+    }
+  );
+
+  return handleResponse(response);
+}
+
 export async function updateFloorCalibration(
   floorId,
   calibration

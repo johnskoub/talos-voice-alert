@@ -22,6 +22,9 @@ public class FloorElement {
     @Column(length = 150)
     private String name;
 
+    @Column(name = "company_user_id")
+    private Long companyUserId;
+
     @Column(nullable = false, precision = 6, scale = 3)
     private BigDecimal x;
 
@@ -102,6 +105,14 @@ public class FloorElement {
 
     public void setType(String type) {
         this.type = type;
+    }
+
+    public Long getCompanyUserId() {
+        return companyUserId;
+    }
+
+    public void setCompanyUserId(Long companyUserId) {
+        this.companyUserId = companyUserId;
     }
 
     public String getName() {

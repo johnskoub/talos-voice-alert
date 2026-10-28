@@ -12,7 +12,13 @@ const elementTypeLabels = {
   ROUTE_NODE: 'Κόμβος διαδρομής',
 };
 
-function FloorElementProperties({ element, containingZone, onElementChange,}) {
+function FloorElementProperties({
+  element,
+  containingZone,
+  companyUsers,
+  users,
+  onElementChange,
+}) {
   if (!element) {
     return (
       <aside className="floor-element-properties">
@@ -336,6 +342,80 @@ function FloorElementProperties({ element, containingZone, onElementChange,}) {
 
       {element.type === 'OCCUPANT' && (
         <div className="property-form">
+          
+          <label>
+            <span>Εργαζόμενος</span>
+
+            <select
+              name="companyUserId"
+              value={element.companyUserId ?? ''}
+              onChange={(event) => {
+                const companyUserId = event.target.value
+                  ? Number(event.target.value)
+                  : null;
+
+                const selectedCompanyUser =
+                  companyUsers?.find(
+                    (companyUser) =>
+                      Number(companyUser.id) ===
+                      companyUserId
+                  );
+
+                const selectedUser =
+                  selectedCompanyUser
+                    ? users?.find(
+                        (user) =>
+                          Number(user.id) ===
+                          Number(selectedCompanyUser.userId)
+                      )
+                    : null;
+
+                const fullName = selectedUser
+                  ? `${selectedUser.firstName ?? ''} ${
+                      selectedUser.lastName ?? ''
+                    }`.trim()
+                  : '';
+
+                onElementChange(element.id, {
+                  companyUserId,
+                  ...(fullName
+                    ? { name: fullName }
+                    : {}),
+                });
+              }}
+            >
+              <option value="">
+                -- Επιλέξτε εργαζόμενο --
+              </option>
+
+              {(companyUsers ?? []).map((companyUser) => {
+                const user = (users ?? []).find(
+                  (item) =>
+                    Number(item.id) ===
+                    Number(companyUser.userId)
+                );
+
+                if (!user) {
+                  return null;
+                }
+
+                const fullName =
+                  `${user.firstName ?? ''} ${
+                    user.lastName ?? ''
+                  }`.trim();
+
+                return (
+                  <option
+                    key={companyUser.id}
+                    value={companyUser.id}
+                  >
+                    {fullName || user.username}
+                  </option>
+                );
+              })}
+            </select>
+          </label>
+
           <label>
             <span>Όνομα παρευρισκόμενου</span>
 

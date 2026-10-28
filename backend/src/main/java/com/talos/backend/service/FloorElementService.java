@@ -50,6 +50,7 @@ public class FloorElementService {
 
         existingElement.setType(updatedElement.getType());
         existingElement.setName(updatedElement.getName());
+        existingElement.setCompanyUserId(updatedElement.getCompanyUserId());
         existingElement.setX(updatedElement.getX());
         existingElement.setY(updatedElement.getY());
         existingElement.setWidth(updatedElement.getWidth());

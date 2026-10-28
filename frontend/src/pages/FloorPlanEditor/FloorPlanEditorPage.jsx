@@ -28,6 +28,8 @@ import {
 
 import { 
   getCompany,
+  getCompanyUsers,
+  getUsers,
   getFloor,
   getFloorElements,
   getRouteConnections,
@@ -57,6 +59,9 @@ function FloorPlanEditorPage() {
   const [elements, setElements] = useState([]);
   const [backendFloor, setBackendFloor] = useState(null);
   const [backendCompany, setBackendCompany] = useState(null);
+
+  const [companyUsers, setCompanyUsers] = useState([]);
+  const [users, setUsers] = useState([]);
 
   const [calibrationSaving, setCalibrationSaving] =
   useState(false);
@@ -106,15 +111,31 @@ function FloorPlanEditorPage() {
           backendFloorData,
           backendElements,
           backendConnections,
+          companyUsersData,
+          usersData,
         ] = await Promise.all([
           getCompany(numericCompanyId),
           getFloor(numericFloorId),
           getFloorElements(numericFloorId),
           getRouteConnections(numericFloorId),
+          getCompanyUsers(numericCompanyId),
+          getUsers(),
         ]);
 
         setBackendCompany(backendCompanyData);
         setBackendFloor(backendFloorData);
+        
+        setCompanyUsers(
+          Array.isArray(companyUsersData)
+            ? companyUsersData
+            : []
+        );
+
+        setUsers(
+          Array.isArray(usersData)
+            ? usersData
+            : []
+        );
 
         setElements(
           Array.isArray(backendElements)
@@ -146,6 +167,16 @@ function FloorPlanEditorPage() {
         console.log(
           'TALOS backend route connections:',
           backendConnections
+        );
+
+        console.log(
+          'TALOS company users:',
+          backendCompanyUsersData
+        );
+
+        console.log(
+          'TALOS all users:',
+          backendUsersData
         );
 
       } catch (error) {
@@ -805,6 +836,8 @@ const handleRunEvacuationAnalysis = () => {
         <FloorElementProperties
           element={selectedElement}
           containingZone={selectedElementZone}
+          companyUsers={companyUsers}
+          users={users}
           onElementChange={
             handleElementPropertiesChange
           }

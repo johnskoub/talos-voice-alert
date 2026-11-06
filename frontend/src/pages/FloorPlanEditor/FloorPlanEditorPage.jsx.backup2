@@ -1,0 +1,859 @@
+import { useEffect, useState } from 'react';
+import { useNavigate, useParams } from 'react-router';
+
+import PageContainer from '../../components/PageContainer/PageContainer';
+import FloorEditorToolbar from '../../components/FloorEditorToolbar/FloorEditorToolbar';
+import FloorEditorCanvas from '../../components/FloorEditorCanvas/FloorEditorCanvas';
+import FloorElementProperties from '../../components/FloorElementProperties/FloorElementProperties';
+import EvacuationAnalysis from '../../components/EvacuationAnalysis/EvacuationAnalysis';
+import EmergencyAlert from '../../components/EmergencyAlert/EmergencyAlert';
+
+import {
+  loadFloorElements,
+  saveFloorElements,
+} from '../../services/floorElementStorage';
+
+import { loadFloorPlanFromSession } from '../../services/floorPlanStorage';
+import { analyzeEvacuation } from '../../services/evacuationAnalysis';
+import {
+  generateEvacuationRoutes,
+  getFireBlockedRouteElements,
+} from '../../services/evacuationRouteGenerator';import { generateEmergencyAlert } from '../../services/emergencyAlertGenerator';
+
+import { findContainingZone } from '../../utils/floorZoneUtils';
+import {
+  loadRouteConnections,
+  saveRouteConnections,
+} from '../../services/routeConnectionStorage';
+
+import { 
+  getCompany,
+  getCompanyUsers,
+  getUsers,
+  getFloor,
+  getFloorElements,
+  getRouteConnections,
+  updateFloorCalibration,
+  createFloorElement,
+  updateFloorElement,
+  deleteFloorElement,
+  createRouteConnection,
+  updateRouteConnection,
+  deleteRouteConnection,
+ } from '../../services/api';
+
+import './FloorPlanEditorPage.css';
+
+function FloorPlanEditorPage() {
+  const { companyId, floorId } = useParams();
+  const navigate = useNavigate();
+
+  const numericCompanyId = Number(companyId);
+  const numericFloorId = Number(floorId);
+
+  const [activeTool, setActiveTool] = useState('SELECT');
+
+  const [selectedElementId, setSelectedElementId] =
+    useState(null);
+
+  const [elements, setElements] = useState([]);
+  const [backendFloor, setBackendFloor] = useState(null);
+  const [backendCompany, setBackendCompany] = useState(null);
+
+  const [companyUsers, setCompanyUsers] = useState([]);
+  const [users, setUsers] = useState([]);
+
+  const [calibrationSaving, setCalibrationSaving] =
+  useState(false);
+
+  const [elementsLoading, setElementsLoading] = useState(true);
+  const [elementsLoadError, setElementsLoadError] = useState('');
+
+  const [saveMessage, setSaveMessage] =
+    useState('');
+
+  const [evacuationAnalysis, setEvacuationAnalysis] =
+    useState(null);
+
+  const [evacuationRoutes, setEvacuationRoutes] =
+    useState([]);
+
+  const [
+    fireBlockedRouteElements,
+    setFireBlockedRouteElements,
+  ] = useState({
+    blockedNodeIds: [],
+    blockedConnectionIds: [],
+  });
+
+  const [emergencyAlert, setEmergencyAlert] =
+    useState(null);
+
+  const [routeConnections, setRouteConnections] = useState([]);
+
+  const [pendingRouteNodeId, setPendingRouteNodeId] =
+    useState(null);
+
+  const [imageDimensions, setImageDimensions] =
+  useState({
+    width: 0,
+    height: 0,
+  });
+
+  useEffect(() => {
+    const loadBackendData = async () => {
+      try {
+        setElementsLoading(true);
+        setElementsLoadError('');
+
+        const [
+          backendCompanyData,
+          backendFloorData,
+          backendElements,
+          backendConnections,
+          backendCompanyUsersData,
+          backendUsersData,
+        ] = await Promise.all([
+          getCompany(numericCompanyId),
+          getFloor(numericFloorId),
+          getFloorElements(numericFloorId),
+          getRouteConnections(numericFloorId),
+          getCompanyUsers(numericCompanyId),
+          getUsers(),
+        ]);
+
+        setBackendCompany(backendCompanyData);
+        setBackendFloor(backendFloorData);
+        
+        setCompanyUsers(
+          Array.isArray(backendCompanyUsersData)
+            ? backendCompanyUsersData
+            : []
+        );
+
+        setUsers(
+          Array.isArray(backendUsersData)
+            ? backendUsersData
+            : []
+        );
+
+        setElements(
+          Array.isArray(backendElements)
+            ? backendElements
+            : []
+        );
+
+        setRouteConnections(
+          Array.isArray(backendConnections)
+            ? backendConnections
+            : []
+        );
+
+        console.log(
+          'TALOS backend company:',
+          backendCompanyData
+        );
+
+        console.log(
+          'TALOS backend floor:',
+          backendFloorData
+        );
+
+        console.log(
+          'TALOS backend elements:',
+          backendElements
+        );
+
+        console.log(
+          'TALOS backend route connections:',
+          backendConnections
+        );
+
+        console.log(
+          'TALOS company users:',
+          backendCompanyUsersData
+        );
+
+        console.log(
+          'TALOS all users:',
+          backendUsersData
+        );
+
+      } catch (error) {
+        console.error(
+          'Failed to load floor data from backend:',
+          error
+        );
+
+        setElementsLoadError(
+          error.message ||
+          'Failed to load floor data.'
+        );
+      } finally {
+        setElementsLoading(false);
+      }
+    };
+
+    loadBackendData();
+  }, [numericCompanyId, numericFloorId]);
+
+  const company = backendCompany;
+  const floor = backendFloor;
+
+  const storedFloorPlan = loadFloorPlanFromSession(
+    numericCompanyId,
+    numericFloorId
+  );
+
+  const editorFloorPlan =
+  storedFloorPlan ||
+  (backendFloor?.floorPlanImage
+    ? {
+        imageDataUrl: backendFloor.floorPlanImage,
+        imageName:
+          backendFloor.floorPlanImage.split('/').pop() ||
+          'floor-plan',
+      }
+    : null);
+
+  const selectedElement = elements.find(
+    (element) => element.id === selectedElementId
+  );
+
+  const selectedElementZone = findContainingZone(
+    selectedElement,
+    elements
+  );
+
+  const clearEvacuationResults = () => {
+    setEvacuationAnalysis(null);
+    setEvacuationRoutes([]);
+    setEmergencyAlert(null);
+  };
+
+const handleRunEvacuationAnalysis = () => {
+  const result = analyzeEvacuation(
+    elements,
+    routeConnections
+  );
+
+  const blockedRouteElements =
+  getFireBlockedRouteElements(
+    elements,
+    routeConnections,
+    result.firePoint
+  );
+
+  if (
+    !imageDimensions.width ||
+    !imageDimensions.height ||
+    !backendFloor?.pixelsPerMeter
+  ) {
+    return;
+  }
+
+  const generatedRoutes =
+    generateEvacuationRoutes(
+      result,
+      elements,
+      routeConnections,
+      {
+        ...backendFloor,
+        imageWidth: imageDimensions.width,
+        imageHeight: imageDimensions.height,
+      }
+    );
+
+
+  const updatedRecommendations =
+    result.recommendations.map(
+      (recommendation) => {
+        if (
+          recommendation.action !== 'EVACUATE'
+        ) {
+          return recommendation;
+        }
+
+        const generatedRoute =
+          generatedRoutes.find(
+            (route) =>
+              route.occupantId ===
+              recommendation.occupant.id
+          );
+
+        if (!generatedRoute) {
+          return {
+            ...recommendation,
+            action: 'SHELTER_IN_PLACE',
+            recommendedExit: null,
+            reason: 'NO_SAFE_GRAPH_ROUTE',
+          };
+        }
+
+        const routedExit =
+          elements.find(
+            (element) =>
+              element.id ===
+              generatedRoute.exitId
+          );
+
+        const originalRecommendedExit =
+          recommendation.recommendedExit;
+
+        const selectedExit =
+          routedExit || originalRecommendedExit;
+
+        const usedAlternativeExit =
+          Boolean(
+            selectedExit &&
+            originalRecommendedExit &&
+            selectedExit.id !== originalRecommendedExit.id
+          );
+
+        return {
+          ...recommendation,
+
+          recommendedExit:
+            routedExit ||
+            recommendation.recommendedExit,
+
+          routeDistance:
+            generatedRoute.totalDistance,
+
+          rejectedRouteExits:
+            generatedRoute.rejectedRouteExits || [],
+
+          originalRecommendedExit:
+            generatedRoute.originalExitId
+              ? {
+                  id: generatedRoute.originalExitId,
+                  name: generatedRoute.originalExitName,
+                }
+              : null,
+
+          reason:
+            usedAlternativeExit
+              ? 'ALTERNATIVE_SAFE_EXIT'
+              : null,
+        };
+      }
+    );
+
+  const updatedResult = {
+    ...result,
+    recommendations:
+      updatedRecommendations,
+  };
+
+  const generatedAlert =
+    generateEmergencyAlert(updatedResult);
+
+  setEvacuationAnalysis(updatedResult);
+  setEvacuationRoutes(generatedRoutes);
+  setEmergencyAlert(generatedAlert);
+  setFireBlockedRouteElements(blockedRouteElements);
+};
+
+  const handleToolChange = (toolId) => {
+    setActiveTool(toolId);
+
+    if (toolId !== 'SELECT') {
+      setSelectedElementId(null);
+    }
+
+    if (toolId !== 'CONNECT_NODES') {
+      setPendingRouteNodeId(null);
+    }
+  };
+
+  const handleElementPropertiesChange = (
+    elementId,
+    changedProperties
+  ) => {
+    setElements((currentElements) =>
+      currentElements.map((element) =>
+        element.id === elementId
+          ? {
+              ...element,
+              ...changedProperties,
+            }
+          : element
+      )
+    );
+
+    setFireBlockedRouteElements({
+      blockedNodeIds: [],
+      blockedConnectionIds: [],
+    });
+
+    clearEvacuationResults();
+  };
+
+  const handleElementsChange = (updatedElements) => {
+    setElements(updatedElements);
+
+    /*
+     * Οποιαδήποτε αλλαγή στη γεωμετρία ή στα Floor Elements
+     * καθιστά την προηγούμενη evacuation analysis παλιά.
+     */
+
+    setFireBlockedRouteElements({
+      blockedNodeIds: [],
+      blockedConnectionIds: [],
+    });
+    clearEvacuationResults();
+  };
+
+  const handleCalibrationComplete = async ({
+    scaleRatio,
+    pixelsPerMeter,
+    pixelDistance,
+    realDistance,
+  }) => {
+    try {
+      setCalibrationSaving(true);
+
+      const updatedFloor =
+        await updateFloorCalibration(
+          numericFloorId,
+          {
+            scaleRatio,
+            pixelsPerMeter,
+          }
+        );
+
+      setBackendFloor(updatedFloor);
+
+      setSaveMessage(
+        `Η κάτοψη βαθμονομήθηκε: ${pixelsPerMeter.toFixed(
+          2
+        )} px/m (${realDistance} m).`
+      );
+
+      console.log(
+        'TALOS calibration saved:',
+        {
+          scaleRatio,
+          pixelsPerMeter,
+          pixelDistance,
+          realDistance,
+        }
+      );
+
+      window.setTimeout(() => {
+        setSaveMessage('');
+      }, 3000);
+    } catch (error) {
+      console.error(
+        'Failed to save floor calibration:',
+        error
+      );
+
+      setSaveMessage(
+        'Σφάλμα κατά την αποθήκευση της βαθμονόμησης.'
+      );
+    } finally {
+      setCalibrationSaving(false);
+    }
+  };
+
+  const handleSaveChanges = async () => {
+    try {
+      setSaveMessage('Αποθήκευση αλλαγών...');
+
+      // ==========================================
+      // 1. FIND DELETED FLOOR ELEMENTS
+      // ==========================================
+
+      const backendElements =
+        await getFloorElements(numericFloorId);
+
+      const currentBackendIds = new Set(
+        elements
+          .filter(
+            (element) =>
+              element.id !== null &&
+              element.id !== undefined &&
+              element.id !== '' &&
+              Number.isFinite(Number(element.id))
+          )
+          .map((element) => Number(element.id))
+      );
+
+      const deletedElements = backendElements.filter(
+        (backendElement) =>
+          backendElement.id !== null &&
+          backendElement.id !== undefined &&
+          !currentBackendIds.has(Number(backendElement.id))
+      );
+
+      for (const deletedElement of deletedElements) {
+        await deleteFloorElement(
+          Number(deletedElement.id)
+        );
+      }
+
+
+      // ==========================================
+      // 2. SAVE FLOOR ELEMENTS
+      // ==========================================
+
+      const savedElements = [];
+      const temporaryIdMap = new Map();
+
+      for (const element of elements) {
+        const numericId = Number(element.id);
+
+        const isExistingBackendElement =
+          element.id !== null &&
+          element.id !== undefined &&
+          element.id !== '' &&
+          Number.isFinite(numericId);
+
+        if (isExistingBackendElement) {
+          // Existing element -> UPDATE
+          const updatedElement =
+            await updateFloorElement(
+              numericId,
+              element
+            );
+
+          savedElements.push(
+            updatedElement || {
+              ...element,
+              id: numericId,
+            }
+          );
+        } else {
+          // New element -> CREATE
+          const createdElement =
+            await createFloorElement(
+              numericFloorId,
+              element
+            );
+
+          if (!createdElement?.id) {
+            throw new Error(
+              `Το backend δεν επέστρεψε ID για το νέο element: ${element.type}`
+            );
+          }
+
+          // Keep mapping:
+          // temporary UUID -> database ID
+          temporaryIdMap.set(
+            element.id,
+            createdElement.id
+          );
+
+          savedElements.push(createdElement);
+        }
+      }
+
+      // ==========================================
+      // 3. REPLACE TEMPORARY IDS WITH DB IDS
+      // ==========================================
+
+      const normalizedElements =
+        savedElements.map((element) => ({
+          ...element,
+          id: Number(element.id),
+        }));
+
+      // ==========================================
+      // 4. FIX ROUTE CONNECTION IDS
+      // ==========================================
+
+      const normalizedConnections =
+        routeConnections.map((connection) => ({
+          ...connection,
+
+          fromNodeId:
+            temporaryIdMap.get(
+              connection.fromNodeId
+            ) ?? Number(connection.fromNodeId),
+
+          toNodeId:
+            temporaryIdMap.get(
+              connection.toNodeId
+            ) ?? Number(connection.toNodeId),
+        }));
+
+      // ==========================================
+      // 5. SAVE ROUTE CONNECTIONS
+      // ==========================================
+
+      const savedConnections = [];
+
+      for (const connection of normalizedConnections) {
+        const numericConnectionId =
+          Number(connection.id);
+
+        const isExistingBackendConnection =
+          connection.id !== null &&
+          connection.id !== undefined &&
+          connection.id !== '' &&
+          Number.isFinite(numericConnectionId);
+
+        if (isExistingBackendConnection) {
+          // Existing connection.
+          // At this stage we keep it because the backend
+          // already owns it.
+          savedConnections.push({
+            ...connection,
+            id: numericConnectionId,
+          });
+
+          continue;
+        }
+
+        // New connection -> CREATE
+        const createdConnection =
+          await createRouteConnection(
+            numericFloorId,
+            {
+              fromNodeId:
+                Number(connection.fromNodeId),
+
+              toNodeId:
+                Number(connection.toNodeId),
+
+              status:
+                connection.status || 'AVAILABLE',
+            }
+          );
+
+        if (!createdConnection?.id) {
+          throw new Error(
+            'Το backend δεν επέστρεψε ID για το Route Connection.'
+          );
+        }
+
+        savedConnections.push(createdConnection);
+      }
+
+      // ==========================================
+      // 6. UPDATE REACT STATE WITH BACKEND DATA
+      // ==========================================
+
+      setElements(normalizedElements);
+
+      setRouteConnections(savedConnections);
+
+      // ==========================================
+      // 7. KEEP LOCAL STORAGE ONLY AS BACKUP
+      // ==========================================
+
+      saveFloorElements(
+        numericCompanyId,
+        numericFloorId,
+        normalizedElements
+      );
+
+      saveRouteConnections(
+        numericCompanyId,
+        numericFloorId,
+        savedConnections
+      );
+
+      // ==========================================
+      // 8. SUCCESS
+      // ==========================================
+
+      setSaveMessage(
+        `Αποθηκεύτηκαν ${normalizedElements.length} Floor Elements και ${savedConnections.length} Route Connections.`
+      );
+
+      window.setTimeout(() => {
+        setSaveMessage('');
+      }, 3000);
+
+    } catch (error) {
+      console.error(
+        'Failed to save floor editor data:',
+        error
+      );
+
+      setSaveMessage(
+        `Σφάλμα κατά την αποθήκευση: ${
+          error.message || 'Άγνωστο σφάλμα'
+        }`
+      );
+    }
+  };
+
+  const handleRouteNodeConnect = (nodeId) => {
+    if (!pendingRouteNodeId) {
+      setPendingRouteNodeId(nodeId);
+      return;
+    }
+
+    if (pendingRouteNodeId === nodeId) {
+      setPendingRouteNodeId(null);
+      return;
+    }
+
+    const connectionAlreadyExists =
+      routeConnections.some(
+        (connection) =>
+          (connection.fromNodeId === pendingRouteNodeId &&
+            connection.toNodeId === nodeId) ||
+          (connection.fromNodeId === nodeId &&
+            connection.toNodeId === pendingRouteNodeId)
+      );
+
+    if (!connectionAlreadyExists) {
+      const newConnection = {
+        id: `connection-${pendingRouteNodeId}-${nodeId}`,
+        fromNodeId: pendingRouteNodeId,
+        toNodeId: nodeId,
+        status: 'AVAILABLE',
+      };
+
+      setRouteConnections(
+        (currentConnections) => [
+          ...currentConnections,
+          newConnection,
+        ]
+      );
+    }
+
+    setPendingRouteNodeId(null);
+  };
+
+  if (elementsLoading) {
+    return (
+      <PageContainer>
+        <section className="floor-editor-unavailable">
+          <h2>Φόρτωση Floor Plan Editor...</h2>
+          <p>
+            Γίνεται φόρτωση της κάτοψης και των δεδομένων
+            του ορόφου.
+          </p>
+        </section>
+      </PageContainer>
+    );
+  }
+
+  if (!company || !floor || !editorFloorPlan) {
+    return (
+      <PageContainer>
+        <section className="floor-editor-unavailable">
+          <h2>
+            Ο Floor Plan Editor δεν είναι διαθέσιμος
+          </h2>
+
+          <p>
+            Δεν βρέθηκε επιχείρηση, όροφος ή
+            αποθηκευμένη εικόνα κάτοψης.
+          </p>
+
+          <button
+            type="button"
+            onClick={() =>
+              navigate(
+                `/companies/${companyId}/floors/${floorId}`
+              )
+            }
+          >
+            Επιστροφή στη διαχείριση ορόφου
+          </button>
+        </section>
+      </PageContainer>
+    );
+  }
+
+  return (
+    <PageContainer>
+      <section className="floor-editor-page-header">
+        <div>
+          <button
+            className="floor-editor-back"
+            type="button"
+            onClick={() =>
+              navigate(
+                `/companies/${companyId}/floors/${floorId}`
+              )
+            }
+          >
+            ← Επιστροφή στη διαχείριση ορόφου
+          </button>
+
+          <p className="floor-editor-eyebrow">
+            FLOOR PLAN EDITOR
+          </p>
+
+          <h2>{floor.name}</h2>
+
+          <p>
+            {company.name} · Τοποθέτηση περιοχών και
+            Floor Elements
+          </p>
+        </div>
+
+        <div className="floor-editor-save-area">
+          {saveMessage && (
+            <p
+              className="floor-editor-save-message"
+              role="status"
+            >
+              {saveMessage}
+            </p>
+          )}
+
+          <button
+            className="floor-editor-save-button"
+            type="button"
+            onClick={handleSaveChanges}
+          >
+            Αποθήκευση αλλαγών
+          </button>
+        </div>
+      </section>
+
+      <div className="floor-editor-layout">
+        <FloorEditorToolbar
+          activeTool={activeTool}
+          onToolChange={handleToolChange}
+        />
+
+        <FloorEditorCanvas
+          imageUrl={editorFloorPlan.imageDataUrl}
+          imageName={editorFloorPlan.imageName}
+          activeTool={activeTool}
+          elements={elements}
+          onElementsChange={handleElementsChange}
+          selectedElementId={selectedElementId}
+          onElementSelect={setSelectedElementId}
+          evacuationRoutes={evacuationRoutes}
+          routeConnections={routeConnections}
+          pendingRouteNodeId={pendingRouteNodeId}
+          onRouteNodeConnect={handleRouteNodeConnect}
+          onCalibrationComplete={handleCalibrationComplete}
+          fireBlockedRouteElements={fireBlockedRouteElements}
+          onImageDimensionsChange={setImageDimensions}
+        />
+
+        <FloorElementProperties
+          element={selectedElement}
+          containingZone={selectedElementZone}
+          companyUsers={companyUsers}
+          users={users}
+          onElementChange={
+            handleElementPropertiesChange
+          }
+        />
+      </div>
+
+      <EvacuationAnalysis
+        analysis={evacuationAnalysis}
+        onRunAnalysis={
+          handleRunEvacuationAnalysis
+        }
+      />
+
+      <EmergencyAlert alert={emergencyAlert} />
+    </PageContainer>
+  );
+}
+
+export default FloorPlanEditorPage;

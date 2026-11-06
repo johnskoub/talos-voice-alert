@@ -36,7 +36,7 @@ function LoginPage() {
     setMessage('');
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
 
     const newErrors = {
@@ -53,12 +53,46 @@ function LoginPage() {
     }
 
     setErrors(newErrors);
+    setMessage('');
 
     if (newErrors.email || newErrors.password) {
       return;
     }
 
-    navigate('/dashboard');
+    try {
+      const response = await fetch(
+        'http://localhost:8080/api/auth/login',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            username: formData.email,
+            password: formData.password,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Invalid username or password');
+      }
+
+      const user = await response.json();
+
+      localStorage.setItem(
+        'talosUser',
+        JSON.stringify(user)
+      );
+
+      navigate('/dashboard');
+
+    } catch (error) {
+
+      setMessage(
+        'Λανθασμένο email ή κωδικός πρόσβασης.'
+      );
+    }
   };
 
   return (

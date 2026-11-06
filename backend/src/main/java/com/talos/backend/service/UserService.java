@@ -88,4 +88,35 @@ public class UserService {
 
         userRepository.save(existingUser);
     }
+
+    public User authenticateUser(
+            String login,
+            String password
+    ) {
+
+        User user = userRepository.findByEmail(login)
+                .orElseGet(() ->
+                        userRepository.findByUsername(login)
+                                .orElseThrow(() ->
+                                        new RuntimeException(
+                                                "Invalid username or password"
+                                        )
+                                )
+                );
+
+        if (!Boolean.TRUE.equals(user.getActive())) {
+            throw new RuntimeException("User account is inactive");
+        }
+
+        if (!passwordEncoder.matches(
+                password,
+                user.getPasswordHash()
+        )) {
+            throw new RuntimeException(
+                    "Invalid username or password"
+            );
+        }
+
+        return user;
+    }
 }

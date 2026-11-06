@@ -231,128 +231,128 @@ function FloorPlanEditorPage() {
     setEmergencyAlert(null);
   };
 
-const handleRunEvacuationAnalysis = () => {
-  const result = analyzeEvacuation(
-    elements,
-    routeConnections
-  );
+  const handleRunEvacuationAnalysis = () => {
+    const result = analyzeEvacuation(
+      elements,
+      routeConnections
+    );
 
-  const blockedRouteElements =
-  getFireBlockedRouteElements(
-    elements,
-    routeConnections,
-    result.firePoint
-  );
-
-  if (
-    !imageDimensions.width ||
-    !imageDimensions.height ||
-    !backendFloor?.pixelsPerMeter
-  ) {
-    return;
-  }
-
-  const generatedRoutes =
-    generateEvacuationRoutes(
-      result,
+    const blockedRouteElements =
+    getFireBlockedRouteElements(
       elements,
       routeConnections,
-      {
-        ...backendFloor,
-        imageWidth: imageDimensions.width,
-        imageHeight: imageDimensions.height,
-      }
+      result.firePoint
     );
 
+    if (
+      !imageDimensions.width ||
+      !imageDimensions.height ||
+      !backendFloor?.pixelsPerMeter
+    ) {
+      return;
+    }
 
-  const updatedRecommendations =
-    result.recommendations.map(
-      (recommendation) => {
-        if (
-          recommendation.action !== 'EVACUATE'
-        ) {
-          return recommendation;
+    const generatedRoutes =
+      generateEvacuationRoutes(
+        result,
+        elements,
+        routeConnections,
+        {
+          ...backendFloor,
+          imageWidth: imageDimensions.width,
+          imageHeight: imageDimensions.height,
         }
+      );
 
-        const generatedRoute =
-          generatedRoutes.find(
-            (route) =>
-              route.occupantId ===
-              recommendation.occupant.id
-          );
 
-        if (!generatedRoute) {
+    const updatedRecommendations =
+      result.recommendations.map(
+        (recommendation) => {
+          if (
+            recommendation.action !== 'EVACUATE'
+          ) {
+            return recommendation;
+          }
+
+          const generatedRoute =
+            generatedRoutes.find(
+              (route) =>
+                route.occupantId ===
+                recommendation.occupant.id
+            );
+
+          if (!generatedRoute) {
+            return {
+              ...recommendation,
+              action: 'SHELTER_IN_PLACE',
+              recommendedExit: null,
+              reason: 'NO_SAFE_GRAPH_ROUTE',
+            };
+          }
+
+          const routedExit =
+            elements.find(
+              (element) =>
+                element.id ===
+                generatedRoute.exitId
+            );
+
+          const originalRecommendedExit =
+            recommendation.recommendedExit;
+
+          const selectedExit =
+            routedExit || originalRecommendedExit;
+
+          const usedAlternativeExit =
+            Boolean(
+              selectedExit &&
+              originalRecommendedExit &&
+              selectedExit.id !== originalRecommendedExit.id
+            );
+
           return {
             ...recommendation,
-            action: 'SHELTER_IN_PLACE',
-            recommendedExit: null,
-            reason: 'NO_SAFE_GRAPH_ROUTE',
+
+            recommendedExit:
+              routedExit ||
+              recommendation.recommendedExit,
+
+            routeDistance:
+              generatedRoute.totalDistance,
+
+            rejectedRouteExits:
+              generatedRoute.rejectedRouteExits || [],
+
+            originalRecommendedExit:
+              generatedRoute.originalExitId
+                ? {
+                    id: generatedRoute.originalExitId,
+                    name: generatedRoute.originalExitName,
+                  }
+                : null,
+
+            reason:
+              usedAlternativeExit
+                ? 'ALTERNATIVE_SAFE_EXIT'
+                : null,
           };
         }
+      );
 
-        const routedExit =
-          elements.find(
-            (element) =>
-              element.id ===
-              generatedRoute.exitId
-          );
+    const updatedResult = {
+      ...result,
+      recommendations:
+        updatedRecommendations,
+    };
 
-        const originalRecommendedExit =
-          recommendation.recommendedExit;
+    const generatedAlert =
+      generateEmergencyAlert(updatedResult);
 
-        const selectedExit =
-          routedExit || originalRecommendedExit;
-
-        const usedAlternativeExit =
-          Boolean(
-            selectedExit &&
-            originalRecommendedExit &&
-            selectedExit.id !== originalRecommendedExit.id
-          );
-
-        return {
-          ...recommendation,
-
-          recommendedExit:
-            routedExit ||
-            recommendation.recommendedExit,
-
-          routeDistance:
-            generatedRoute.totalDistance,
-
-          rejectedRouteExits:
-            generatedRoute.rejectedRouteExits || [],
-
-          originalRecommendedExit:
-            generatedRoute.originalExitId
-              ? {
-                  id: generatedRoute.originalExitId,
-                  name: generatedRoute.originalExitName,
-                }
-              : null,
-
-          reason:
-            usedAlternativeExit
-              ? 'ALTERNATIVE_SAFE_EXIT'
-              : null,
-        };
-      }
-    );
-
-  const updatedResult = {
-    ...result,
-    recommendations:
-      updatedRecommendations,
+    setEvacuationAnalysis(updatedResult);
+    setEvacuationRoutes(generatedRoutes);
+    setEmergencyAlert(generatedAlert);
+    setFireBlockedRouteElements(blockedRouteElements);
   };
-
-  const generatedAlert =
-    generateEmergencyAlert(updatedResult);
-
-  setEvacuationAnalysis(updatedResult);
-  setEvacuationRoutes(generatedRoutes);
-  setEmergencyAlert(generatedAlert);
-  setFireBlockedRouteElements(blockedRouteElements);
-};
 
   const handleToolChange = (toolId) => {
     setActiveTool(toolId);
